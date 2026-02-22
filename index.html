@@ -45,13 +45,11 @@
   .in-name:focus { box-shadow: none; border-bottom: 2px solid #1a73e8; }
   .theme-drug .in-name:focus { border-bottom: 2px solid #1e8e3e; }
   
-  /* ---- 核心视觉引擎：加入顶级丝滑的贝塞尔曲线过渡动画 ---- */
   .log-text { 
       font-family: -apple-system, sans-serif; 
       display: block; 
       text-align: center; 
       white-space: nowrap; 
-      /* 时间设为 0.35秒，使用极其舒适的非线性物理缓动 */
       transition: font-size 0.35s cubic-bezier(0.4, 0, 0.2, 1), letter-spacing 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .num-base { color: #555; }
@@ -156,18 +154,24 @@ function createRow() {
     return tr;
 }
 
-// 智能字号缩放器
+// ------------------------------------------
+// 核心优化：彻底解放空间的大字号缩放器
+// ------------------------------------------
 function autoFitText(element) {
     let textLen = element.innerText.replace(/\s/g, '').length;
     
+    // 既然最多8个字符，我们直接大幅拉升字号下限！
     if (textLen >= 8) {
-        element.style.fontSize = '10.5px';
-        element.style.letterSpacing = '-0.8px';
+        // 8个字符（如 52+20=72），字号从10.5暴增到13.5，间距放宽
+        element.style.fontSize = '13.5px';
+        element.style.letterSpacing = '-0.5px';
     } else if (textLen >= 5) {
-        element.style.fontSize = '12.5px';
-        element.style.letterSpacing = '-0.3px';
+        // 5~7个字符，字号增加到14.5
+        element.style.fontSize = '14.5px';
+        element.style.letterSpacing = '-0.2px';
     } else {
-        element.style.fontSize = '15.5px';
+        // 个位数，直接顶到最大的16.5px，极其醒目
+        element.style.fontSize = '16.5px';
         element.style.letterSpacing = 'normal';
     }
 }
@@ -200,7 +204,6 @@ function calc(tr) {
     let outLog = tr.querySelector('.out-log');
     let remLog = tr.querySelector('.rem-log');
 
-    // 核心渲染逻辑
     if (totalStr === "" && outStr === "" && remStr === "" && addStr === "") { 
         outLog.innerHTML = '-'; 
         remLog.innerHTML = '-'; 
@@ -224,14 +227,13 @@ function calc(tr) {
         remLog.innerHTML = rHtml;
     }
 
-    // 强制动画触发器：利用极短的定时器，确保浏览器先画出新字，再执行字号缩放
     setTimeout(() => {
         autoFitText(outLog);
         autoFitText(remLog);
     }, 10);
 }
 
-function getStorageKey() { return 'hospital_v22_room_' + currentRoom + '_' + currentType; }
+function getStorageKey() { return 'hospital_v23_room_' + currentRoom + '_' + currentType; }
 
 function getTableDataAsJson() {
     let data = [];
