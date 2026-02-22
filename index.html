@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>DSA清点</title>
+<title>DSA清点台 V25</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1a73e8">
 <link rel="apple-touch-icon" href="icon.png">
 
 <style>
-  body { font-family: -apple-system, sans-serif; margin: 0; padding: 5px; background: #f0f2f5; color: #333; padding-bottom: 70px; }
+  body { font-family: -apple-system, sans-serif; margin: 0; padding: 5px; background: #f0f2f5; color: #333; padding-bottom: 75px; }
   h3 { text-align: center; margin: 10px 0 8px 0; font-size: 16px; color: #111; }
   .nav-header { background: #fff; padding: 8px 5px; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); margin-bottom: 10px; }
   .room-tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 10px; padding-bottom: 4px; scroll-behavior: smooth; }
@@ -23,17 +23,22 @@
   .type-btn[data-type="drug"].active { background: #e6f4ea; color: #1e8e3e; border-color: #1e8e3e; }
   .table-wrapper { background: #fff; border-radius: 6px; box-shadow: 0 1px 6px rgba(0,0,0,0.08); overflow: hidden; }
   table { width: 100%; border-collapse: collapse; text-align: center; font-size: 13px; table-layout: fixed; }
-  th { background: #1a73e8; color: white; padding: 8px 0; font-weight: normal; font-size: 12px; transition: background 0.3s; }
+  th { background: #1a73e8; color: white; padding: 8px 0; font-weight: normal; font-size: 11px; transition: background 0.3s; }
   .theme-drug th { background: #1e8e3e; } 
   td { padding: 4px 1px; border-bottom: 1px solid #eee; vertical-align: middle; height: 46px; } 
   tbody tr:nth-child(even) { background-color: #f8fafd; }
   
-  /* ---- 重新分配列宽：给公式区续命 1% ---- */
-  .c-tot { width: 9%; }   
-  .c-name { width: 17%; } 
+  /* LBS 房间双引擎的动态显示隐藏逻辑 */
+  body.mode-dsa15 .c-dsa6-only { display: none; }
+  body.mode-dsa6 .c-dsa15-only { display: none; }
+
+  /* 终极列宽分配 */
+  .c-tot { width: 11%; }   
+  .c-add { width: 10%; } 
+  .c-name { width: 18%; } 
   .c-num { width: 10%; }  
-  .c-copy { width: 16.5%; background: #fffde7; border-left: 1px dashed #e0e0e0; } /* 从 16 变成 16.5 */
-  .c-act { width: 11%; }  /* 操作列从 12 压缩到 11 */
+  .c-copy { width: 15%; background: #fffde7; border-left: 1px dashed #e0e0e0; } 
+  .c-act { width: 11%; }  
   
   th.th-copy { background: #fbc02d; color: #333; font-weight: bold; border-left: 1px dashed #fff; font-size: 11px; padding: 0;}
   
@@ -42,22 +47,20 @@
   .theme-drug input:focus { border-color: #1e8e3e; background: #e6f4ea; box-shadow: inset 0 0 0 1px #1e8e3e; }
   input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
   input[type=number] { -moz-appearance: textfield; }
+  
+  /* 资产区特殊底色提示（仅DSA 1-5 补货区） */
+  body.mode-dsa15 .in-add-mid { background: #f0f8ff; border-color: #b6d4fe; }
+
   .in-name { text-align: left; border: none; border-bottom: 1px solid #ccc; border-radius: 0; background: transparent; font-size: 13px; padding-left: 2px; }
   .in-name:focus { box-shadow: none; border-bottom: 2px solid #1a73e8; }
   .theme-drug .in-name:focus { border-bottom: 2px solid #1e8e3e; }
   
-  .log-text { 
-      font-family: -apple-system, sans-serif; 
-      display: block; 
-      text-align: center; 
-      white-space: nowrap; 
-      transition: font-size 0.35s cubic-bezier(0.4, 0, 0.2, 1), letter-spacing 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .num-base { color: #555; }
-  .num-add { color: #d32f2f; font-weight: bold; }
-  .num-sub { color: #388e3c; font-weight: bold; }
+  .log-text { font-family: -apple-system, sans-serif; display: block; text-align: center; white-space: nowrap; transition: font-size 0.3s cubic-bezier(0.4, 0, 0.2, 1), letter-spacing 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  .num-base { color: #000; font-size: 1.15em; font-weight: bold;} /* 原始出库数字加大 */
+  .num-add { color: #d32f2f; font-weight: bold; margin-left:1px; } /* 盘亏红字警报 */
+  .num-sub { color: #388e3c; font-weight: bold; margin-left:1px; } /* 盘盈绿字警报 */
   .num-stock { color: #1976d2; font-weight: bold; }
-  .num-final { font-weight: bold; color: #000; font-size: 1.15em; } 
+  .num-final { font-weight: bold; color: #000; font-size: 1.25em; } 
   
   .act-wrap { display: flex; align-items: center; justify-content: center; height: 36px; padding: 0; gap: 1px; }
   .move-col { display: flex; flex-direction: column; justify-content: space-between; height: 100%; width: 22px; gap: 2px; }
@@ -66,11 +69,13 @@
   .theme-drug .move-col { display: none; }
   .theme-drug .btn-del { display: flex; width: 28px; height: 100%; background: #fce4e4; color: #d32f2f; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; align-items: center; justify-content: center; padding: 0; }
 
-  .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 8px; background: #fff; display: flex; gap: 6px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 100; }
-  .btn-action { flex: 1; padding: 10px 0; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; white-space: nowrap; }
+  /* 底部导航栏自适应布局 */
+  .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 8px; background: #fff; display: flex; gap: 4px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 100; overflow-x: auto;}
+  .btn-action { flex: 1; min-width: 50px; padding: 10px 2px; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; white-space: nowrap; }
   .btn-add { background: #f1f3f5; color: #333; }
   .btn-top { background: #e8f0fe; color: #1a73e8; }
   .btn-fill { background: #e6f4ea; color: #1e8e3e; display: none; } 
+  .btn-forward { background: #e0f7fa; color: #00838f; border: 1px solid #b2ebf2; } /* 全新一键结转按钮 */
   .btn-undo { background: #fff3cd; color: #856404; }
   .btn-clear { background: #fce4e4; color: #c62828; }
 
@@ -80,7 +85,7 @@
   .divider-top td { border-top: 2px dashed #999 !important; position: relative; }
 </style>
 </head>
-<body id="appBody">
+<body id="appBody" class="mode-dsa15">
 
 <h3>🏥 DSA 双轨平账台</h3>
 
@@ -103,11 +108,12 @@
   <table>
     <thead>
       <tr>
-        <th class="c-tot">晨总</th>
+        <th class="c-tot">昨日<br>余量</th>
+        <th class="c-add c-dsa15-only">当日<br>补充</th>
         <th class="c-name" id="th-name">名称</th>
         <th class="c-num">前出</th>
         <th class="c-num">终盘</th>
-        <th class="c-num">后补</th>
+        <th class="c-add c-dsa6-only">后补</th>
         <th class="c-copy th-copy">出库</th>
         <th class="c-copy th-copy">结余</th>
         <th class="c-act">操作</th>
@@ -118,11 +124,12 @@
 </div>
 
 <div class="bottom-bar">
-  <button class="btn-action btn-add" id="btnAddRow">➕ 新增</button>
-  <button class="btn-action btn-top" id="btnTop">⬆️ 排序</button>
-  <button class="btn-action btn-fill" id="btnFill">✅ 总结</button>
-  <button class="btn-action btn-undo" id="btnUndo">↩️ 撤销</button>
-  <button class="btn-action btn-clear" id="btnClear">🗑️ 清空</button>
+  <button class="btn-action btn-add" id="btnAddRow">➕新增</button>
+  <button class="btn-action btn-top" id="btnTop">⬆️排序</button>
+  <button class="btn-action btn-fill" id="btnFill">✅补零</button>
+  <button class="btn-action btn-forward" id="btnForward">🔄结转</button>
+  <button class="btn-action btn-undo" id="btnUndo">↩️撤销</button>
+  <button class="btn-action btn-clear" id="btnClear">🗑️清空</button>
 </div>
 
 <script>
@@ -139,10 +146,11 @@ function createRow() {
     let tr = document.createElement('tr');
     tr.innerHTML = `
       <td><input type="number" inputmode="numeric" class="in-total"></td>
+      <td class="c-dsa15-only"><input type="number" inputmode="numeric" class="in-add-mid"></td>
       <td><input type="text" class="in-name" placeholder="名称"></td>
       <td><input type="number" inputmode="numeric" class="in-out"></td>
       <td><input type="number" inputmode="numeric" class="in-rem"></td>
-      <td><input type="number" inputmode="numeric" class="in-add"></td>
+      <td class="c-dsa6-only"><input type="number" inputmode="numeric" class="in-add-post"></td>
       <td class="c-copy"><span class="log-text out-log">-</span></td>
       <td class="c-copy"><span class="log-text rem-log">-</span></td>
       <td class="c-act">
@@ -155,89 +163,105 @@ function createRow() {
     return tr;
 }
 
-// ---- 微米级缩放控制：修复 0.01 的溢出感 ----
 function autoFitText(element) {
     let textLen = element.innerText.replace(/\s/g, '').length;
-    
     if (textLen >= 8) {
-        // 微调：从 13.5px 降到 13px，字距稍微收紧一丁点
-        element.style.fontSize = '13px';
+        element.style.fontSize = '12.5px';
         element.style.letterSpacing = '-0.6px';
     } else if (textLen >= 5) {
-        element.style.fontSize = '14.5px';
+        element.style.fontSize = '14px';
         element.style.letterSpacing = '-0.2px';
     } else {
-        element.style.fontSize = '16px'; // 个位数保留巨大字号
+        element.style.fontSize = '16px'; 
         element.style.letterSpacing = 'normal';
     }
 }
 
+// 核心：LBS地理双引擎计算器
 function calc(tr) {
+    let isDSA6 = currentRoom === 6;
+
     let totalInput = tr.querySelector('.in-total');
+    let addMidInput = tr.querySelector('.in-add-mid');
     let outInput = tr.querySelector('.in-out');
     let remInput = tr.querySelector('.in-rem');
-    let addInput = tr.querySelector('.in-add');
+    let addPostInput = tr.querySelector('.in-add-post');
 
     let totalStr = totalInput.value;
     let outStr = outInput.value;
     let remStr = remInput.value;
-    let addStr = addInput.value;
+    
+    let addMid = parseInt(addMidInput.value) || 0;
+    let preOut = parseInt(outStr) || 0;
+    let counted = parseInt(remStr) || 0;
+    let addPost = parseInt(addPostInput.value) || 0;
 
+    // 逆向推算昨日余量
     if (totalStr === "" && outStr !== "" && remStr !== "") {
-        let pOut = parseInt(outStr) || 0;
-        let pRem = parseInt(remStr) || 0;
-        let pAdd = parseInt(addStr) || 0;
-        let calcTotal = pOut + pRem - pAdd; 
+        let calcTotal = isDSA6 ? (preOut + counted) : (preOut + counted - addMid); 
         totalInput.value = calcTotal >= 0 ? calcTotal : 0; 
         totalStr = totalInput.value; 
     }
 
     let total = parseInt(totalStr) || 0;
-    let preOut = parseInt(outStr) || 0;
-    let counted = parseInt(remStr) || 0;
-    let add = parseInt(addStr) || 0;
-
     let outLog = tr.querySelector('.out-log');
     let remLog = tr.querySelector('.rem-log');
 
-    if (totalStr === "" && outStr === "" && remStr === "" && addStr === "") { 
-        outLog.innerHTML = '-'; 
-        remLog.innerHTML = '-'; 
-    } else if (remStr === "") { 
-        let expectedRem = total - preOut + add;
-        outLog.innerHTML = outStr !== "" ? '<span class="num-final">' + preOut + '</span>' : '<span class="num-final">0</span>'; 
-        remLog.innerHTML = totalStr !== "" ? '<span class="num-final">' + expectedRem + '</span>' : "-"; 
-    } else {
-        let diff = total - preOut - counted; 
-        let outHtml = '<span class="num-base">' + preOut + '</span>';
-        if (diff > 0) outHtml += '<span class="num-add">+' + diff + '</span>';
-        else if (diff < 0) outHtml += '<span class="num-sub">' + diff + '</span>';
-        let finalOut = preOut + diff; 
-        outHtml += '=<span class="num-final">' + finalOut + '</span>';
-        outLog.innerHTML = outHtml;
-
-        let rHtml = '<span class="num-base">' + counted + '</span>';
-        if (addStr !== "" && add > 0) rHtml += '<span class="num-stock">+' + add + '</span>';
-        let finalRem = counted + add;
-        rHtml += '=<span class="num-final">' + finalRem + '</span>';
-        remLog.innerHTML = rHtml;
+    // 空状态
+    if (totalStr === "" && outStr === "" && remStr === "" && addMidInput.value === "" && addPostInput.value === "") { 
+        outLog.innerHTML = '-'; remLog.innerHTML = '-'; 
+        setTimeout(() => { autoFitText(outLog); autoFitText(remLog); }, 10);
+        return; 
     }
 
-    setTimeout(() => {
-        autoFitText(outLog);
-        autoFitText(remLog);
-    }, 10);
+    // 正向预测预期结余
+    if (remStr === "") { 
+        let expectedRem = isDSA6 ? (total - preOut + addPost) : (total + addMid - preOut);
+        outLog.innerHTML = outStr !== "" ? `<span class="num-final">${preOut}</span>` : `<span class="num-final">0</span>`; 
+        remLog.innerHTML = totalStr !== "" ? `<span class="num-final">${expectedRem}</span>` : "-"; 
+        setTimeout(() => { autoFitText(outLog); autoFitText(remLog); }, 10);
+        return; 
+    }
+
+    // ============================================
+    // 终极严格审计逻辑：只展示原始记录和差值警报
+    // ============================================
+    let theoryOut = isDSA6 ? (total - counted) : (total + addMid - counted);
+    let diff = theoryOut - preOut; // >0说明盘亏(用的比记的多)，<0说明盘盈(记的比用的多)
+    let finalRem = isDSA6 ? (counted + addPost) : counted;
+
+    // 1. 出库警报（抛弃自作聪明的算式）
+    let outHtml = `<span class="num-base">${preOut}</span>`;
+    if (diff > 0) outHtml += `<span class="num-add">+${diff}</span>`;      // 红字：提醒漏费
+    else if (diff < 0) outHtml += `<span class="num-sub">${diff}</span>`; // 绿字：提醒冲销退费
+    outLog.innerHTML = outHtml;
+
+    // 2. 真实结余（抛弃冗余，还原真相）
+    let rHtml = "";
+    if (isDSA6 && addPostInput.value !== "" && addPost > 0) {
+        // DSA 6 特有的时间差展示
+        rHtml = `<span class="num-base" style="font-size:1em">${counted}</span><span class="num-stock">+${addPost}</span>=<span class="num-final">${finalRem}</span>`;
+    } else {
+        // DSA 1-5 极简展示
+        rHtml = `<span class="num-final">${finalRem}</span>`;
+    }
+    remLog.innerHTML = rHtml;
+
+    setTimeout(() => { autoFitText(outLog); autoFitText(remLog); }, 10);
 }
 
-function getStorageKey() { return 'hospital_v24_room_' + currentRoom + '_' + currentType; }
+function getStorageKey() { return 'hospital_v25_room_' + currentRoom + '_' + currentType; }
 
 function getTableDataAsJson() {
     let data = [];
     document.querySelectorAll('#tBody tr').forEach(tr => {
         data.push({
-            total: tr.querySelector('.in-total').value, name: tr.querySelector('.in-name').value,
-            out: tr.querySelector('.in-out').value, rem: tr.querySelector('.in-rem').value,
-            add: tr.querySelector('.in-add').value
+            total: tr.querySelector('.in-total').value, 
+            name: tr.querySelector('.in-name').value,
+            out: tr.querySelector('.in-out').value, 
+            rem: tr.querySelector('.in-rem').value,
+            addMid: tr.querySelector('.in-add-mid').value,
+            addPost: tr.querySelector('.in-add-post').value
         });
     });
     return JSON.stringify(data);
@@ -262,9 +286,13 @@ document.getElementById('btnUndo').addEventListener('click', function() {
     tbody.innerHTML = ''; 
     previousData.forEach((item) => {
         let tr = createRow(); tbody.appendChild(tr);
-        tr.querySelector('.in-total').value = item.total || ''; tr.querySelector('.in-name').value = item.name || '';
-        tr.querySelector('.in-out').value = item.out || ''; tr.querySelector('.in-rem').value = item.rem || '';
-        tr.querySelector('.in-add').value = item.add || ''; calc(tr);
+        tr.querySelector('.in-total').value = item.total || ''; 
+        tr.querySelector('.in-name').value = item.name || '';
+        tr.querySelector('.in-out').value = item.out || ''; 
+        tr.querySelector('.in-rem').value = item.rem || '';
+        tr.querySelector('.in-add-mid').value = item.addMid || ''; 
+        tr.querySelector('.in-add-post').value = item.addPost || ''; 
+        calc(tr);
     });
     saveData(); 
 });
@@ -278,9 +306,19 @@ function loadData() {
     if(saved && saved !== '[]') {
         JSON.parse(saved).forEach((item) => {
             let tr = createRow(); tbody.appendChild(tr);
-            tr.querySelector('.in-total').value = item.total || ''; tr.querySelector('.in-name').value = item.name || '';
-            tr.querySelector('.in-out').value = item.out || ''; tr.querySelector('.in-rem').value = item.rem || '';
-            tr.querySelector('.in-add').value = item.add || ''; calc(tr);
+            tr.querySelector('.in-total').value = item.total || ''; 
+            tr.querySelector('.in-name').value = item.name || '';
+            tr.querySelector('.in-out').value = item.out || ''; 
+            tr.querySelector('.in-rem').value = item.rem || '';
+            // 向下兼容：如果检测到旧版的 add 数据，自动分流到新框里
+            if (item.add) {
+                if (currentRoom === 6) tr.querySelector('.in-add-post').value = item.add;
+                else tr.querySelector('.in-add-mid').value = item.add;
+            } else {
+                tr.querySelector('.in-add-mid').value = item.addMid || ''; 
+                tr.querySelector('.in-add-post').value = item.addPost || ''; 
+            }
+            calc(tr);
         });
     } else {
         defaultLists[currentType].forEach((name) => {
@@ -289,10 +327,18 @@ function loadData() {
     }
 }
 
+function applyRoomMode() {
+    let body = document.getElementById('appBody');
+    if (currentRoom === 6) { body.classList.remove('mode-dsa15'); body.classList.add('mode-dsa6'); } 
+    else { body.classList.remove('mode-dsa6'); body.classList.add('mode-dsa15'); }
+}
+
 function switchRoom(roomNum, btnElement) {
     saveData(); currentRoom = roomNum; localStorage.setItem('hospital_last_room', currentRoom); 
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active')); btnElement.classList.add('active');
-    btnElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); loadData(); 
+    btnElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); 
+    applyRoomMode();
+    loadData(); 
 }
 
 function switchType(type) {
@@ -346,14 +392,73 @@ document.getElementById('btnFill').addEventListener('click', function() {
     document.querySelectorAll('#tBody tr').forEach(tr => {
         let name = tr.querySelector('.in-name').value.trim();
         if (name !== "") {
-            ['.in-total', '.in-out', '.in-rem', '.in-add'].forEach(sel => {
+            ['.in-total', '.in-out', '.in-rem', '.in-add-mid', '.in-add-post'].forEach(sel => {
                 let inp = tr.querySelector(sel);
-                if (inp.value === "") inp.value = "0";
+                if (inp && inp.offsetParent !== null && inp.value === "") inp.value = "0";
             });
             calc(tr);
         }
     });
     saveData();
+});
+
+// ============================================
+// 终极自动化神技：一键结转今日
+// ============================================
+document.getElementById('btnForward').addEventListener('click', function() {
+    let roomName = document.querySelector('.tab-btn.active').innerText;
+    let typeName = currentType === 'drug' ? '药品' : '耗材';
+    
+    if(confirm(`⚠️ 正在结转【${roomName} - ${typeName}】\n\n确定要将现在的结余作为明天的起点吗？\n（点击确定后，当前所有流水记录将被清空，请确保账目已核对无误！）`)) {
+        pushHistory();
+        let isDSA6 = currentRoom === 6;
+        
+        document.querySelectorAll('#tBody tr').forEach(tr => {
+            let totalInput = tr.querySelector('.in-total');
+            let addMidInput = tr.querySelector('.in-add-mid');
+            let outInput = tr.querySelector('.in-out');
+            let remInput = tr.querySelector('.in-rem');
+            let addPostInput = tr.querySelector('.in-add-post');
+            
+            let name = tr.querySelector('.in-name').value.trim();
+            
+            // 只处理有数据的行
+            if (name !== "" || totalInput.value !== "" || outInput.value !== "" || remInput.value !== "") {
+                let total = parseInt(totalInput.value) || 0;
+                let addMid = parseInt(addMidInput.value) || 0;
+                let preOut = parseInt(outInput.value) || 0;
+                let counted = parseInt(remInput.value) || 0;
+                let addPost = parseInt(addPostInput.value) || 0;
+                
+                let finalRem = 0;
+                if (remInput.value === "") {
+                    // 如果中途偷懒结转，用预期值
+                    finalRem = isDSA6 ? (total - preOut + addPost) : (total + addMid - preOut);
+                } else {
+                    // 正常结转，用确切盘点值
+                    finalRem = isDSA6 ? (counted + addPost) : counted;
+                }
+                
+                // 将算出的最终结余，硬性赋予给昨日余量
+                if (finalRem > 0 || totalInput.value !== "") {
+                    totalInput.value = finalRem >= 0 ? finalRem : 0;
+                } else {
+                    totalInput.value = "";
+                }
+                
+                // 抹除流水战场
+                outInput.value = '';
+                remInput.value = '';
+                addMidInput.value = '';
+                addPostInput.value = '';
+                
+                tr.classList.remove('divider-top'); 
+                calc(tr);
+            }
+        });
+        saveData();
+        alert('✅ 结转成功！现在的【昨日余量】已是最新基准，可以交班了！');
+    }
 });
 
 document.getElementById('btnTop').addEventListener('click', function() {
@@ -372,20 +477,21 @@ document.getElementById('btnTop').addEventListener('click', function() {
         let totalStr = tr.querySelector('.in-total').value;
         let outStr = tr.querySelector('.in-out').value;
         let remStr = tr.querySelector('.in-rem').value;
-        let addStr = tr.querySelector('.in-add').value;
+        let addMidStr = tr.querySelector('.in-add-mid').value;
+        let addPostStr = tr.querySelector('.in-add-post').value;
         
         let total = parseInt(totalStr) || 0;
         let outVal = parseInt(outStr) || 0;
         let counted = parseInt(remStr) || 0;
-        let addVal = parseInt(addStr) || 0;
+        let addPost = parseInt(addPostStr) || 0;
         
-        let finalRem = counted + addVal; 
+        let finalRem = (currentRoom === 6) ? (counted + addPost) : counted; 
         
-        if ((totalStr === "" && outStr === "" && remStr === "" && addStr === "") || 
+        if ((totalStr === "" && outStr === "" && remStr === "" && addMidStr === "" && addPostStr === "") || 
             (total === 0 && outVal === 0 && finalRem === 0)) {
             group4.push(tr);
         } else {
-            if (outVal > 0) {
+            if (outVal > 0 || addMidStr !== "" || addPostStr !== "") {
                 if (finalRem > 0) group1.push(tr);
                 else group2.push(tr);
             } else {
@@ -413,8 +519,11 @@ document.getElementById('btnClear').addEventListener('click', function() {
     if(confirm(`确定要清空 【${roomName} - ${typeName}】 的盘点数字吗？\n\n(仅清空当前页数字，排列顺序和名称保留)`)) {
         pushHistory();
         document.querySelectorAll('#tBody tr').forEach(tr => {
-            tr.querySelector('.in-total').value = ''; tr.querySelector('.in-out').value = '';
-            tr.querySelector('.in-rem').value = ''; tr.querySelector('.in-add').value = ''; 
+            tr.querySelector('.in-total').value = ''; 
+            tr.querySelector('.in-out').value = '';
+            tr.querySelector('.in-rem').value = ''; 
+            tr.querySelector('.in-add-mid').value = ''; 
+            tr.querySelector('.in-add-post').value = ''; 
             tr.classList.remove('divider-top'); calc(tr);
         });
         saveData();
@@ -428,6 +537,7 @@ window.onload = function() {
     document.querySelector(`.type-btn[data-type="${currentType}"]`).classList.add('active');
     if(currentType === 'drug') { body.classList.add('theme-drug'); thName.innerText = '药品名称'; } 
     else { body.classList.remove('theme-drug'); thName.innerText = '耗材名称'; }
+    applyRoomMode();
     loadData();
 };
 
