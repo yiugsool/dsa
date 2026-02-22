@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>DSA清点</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a73e8">
+<link rel="apple-touch-icon" href="icon.png">
+
+<style>
+  body { font-family: -apple-system, sans-serif; margin: 0; padding: 5px; background: #f0f2f5; color: #333; padding-bottom: 70px; }
+  h3 { text-align: center; margin: 10px 0 8px 0; font-size: 16px; color: #111; }
+  .nav-header { background: #fff; padding: 8px 5px; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); margin-bottom: 10px; }
+  .room-tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 10px; padding-bottom: 4px; scroll-behavior: smooth; }
+  .room-tabs::-webkit-scrollbar { display: none; }
+  .room-tabs { -ms-overflow-style: none; scrollbar-width: none; }
+  .tab-btn { flex: 0 0 auto; padding: 8px 16px; background: #f1f3f5; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; color: #666; cursor: pointer; transition: all 0.2s; }
+  .tab-btn.active { background: #343a40; color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transform: scale(1.02); }
+  .type-tabs { display: flex; gap: 8px; }
+  .type-btn { flex: 1; padding: 8px 0; border: 1px solid #ddd; background: #fff; border-radius: 20px; font-size: 14px; font-weight: bold; color: #555; cursor: pointer; transition: all 0.2s; }
+  .type-btn[data-type="consumable"].active { background: #e8f0fe; color: #1a73e8; border-color: #1a73e8; }
+  .type-btn[data-type="drug"].active { background: #e6f4ea; color: #1e8e3e; border-color: #1e8e3e; }
+  .table-wrapper { background: #fff; border-radius: 6px; box-shadow: 0 1px 6px rgba(0,0,0,0.08); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; text-align: center; font-size: 13px; table-layout: fixed; }
+  th { background: #1a73e8; color: white; padding: 8px 0; font-weight: normal; font-size: 12px; transition: background 0.3s; }
+  .theme-drug th { background: #1e8e3e; } 
+  td { padding: 4px 2px; border-bottom: 1px solid #eee; vertical-align: middle; height: 40px; }
+  tbody tr:nth-child(even) { background-color: #f8fafd; }
+  .c-tot { width: 11%; }
+  .c-name { width: 18%; }
+  .c-num { width: 11%; }
+  .c-copy { width: 18%; background: #fffde7; border-left: 1px dashed #e0e0e0; }
+  .c-del { width: 8%; }
+  th.th-copy { background: #fbc02d; color: #333; font-weight: bold; border-left: 1px dashed #fff; }
+  input { width: 100%; height: 32px; border: 1px solid #ccc; outline: none; border-radius: 4px; text-align: center; box-sizing: border-box; font-size: 14px; background: #fff; padding: 0; }
+  input:focus { border-color: #1a73e8; background: #e8f0fe; box-shadow: inset 0 0 0 1px #1a73e8; }
+  .theme-drug input:focus { border-color: #1e8e3e; background: #e6f4ea; box-shadow: inset 0 0 0 1px #1e8e3e; }
+  input[type=number]::-webkit-inner-spin-button, 
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+  .in-name { text-align: left; border: none; border-bottom: 1px solid #ccc; border-radius: 0; background: transparent; font-size: 13px; padding-left: 2px; }
+  .in-name:focus { box-shadow: none; border-bottom: 2px solid #1a73e8; }
+  .theme-drug .in-name:focus { border-bottom: 2px solid #1e8e3e; }
+  .log-text { font-family: monospace; font-size: 13px; display: block; text-align: center; white-space: nowrap; letter-spacing: -0.5px; }
+  .num-base { color: #555; }
+  .num-add { color: #d32f2f; font-weight: bold; }
+  .num-sub { color: #388e3c; font-weight: bold; }
+  .num-stock { color: #1976d2; font-weight: bold; }
+  .num-final { font-weight: bold; color: #000; font-size: 14px; }
+  .btn-del { color: #d32f2f; background: none; border: none; font-size: 18px; padding: 0; width: 100%; height: 100%; cursor: pointer; }
+  .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 10px; background: #fff; display: flex; gap: 8px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 100; }
+  .btn-action { flex: 1; padding: 12px 0; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+  .btn-add { background: #e8f0fe; color: #1a73e8; }
+  .theme-drug .btn-add { background: #e6f4ea; color: #1e8e3e; }
+  .btn-clear { background: #fce4e4; color: #c62828; }
+</style>
+</head>
+<body id="appBody">
+
+<h3>🏥 DSA 双轨平账台</h3>
+
+<div class="nav-header">
+  <div class="room-tabs" id="roomTabs">
+    <button class="tab-btn" onclick="switchRoom(1, this)">DSA 1</button>
+    <button class="tab-btn" onclick="switchRoom(2, this)">DSA 2</button>
+    <button class="tab-btn" onclick="switchRoom(3, this)">DSA 3</button>
+    <button class="tab-btn" onclick="switchRoom(4, this)">DSA 4</button>
+    <button class="tab-btn" onclick="switchRoom(5, this)">DSA 5</button>
+    <button class="tab-btn" onclick="switchRoom(6, this)">DSA 6</button>
+  </div>
+  <div class="type-tabs">
+    <button class="type-btn" data-type="drug" onclick="switchType('drug')">💊 药品清点</button>
+    <button class="type-btn" data-type="consumable" onclick="switchType('consumable')">📦 耗材清点</button>
+  </div>
+</div>
+
+<div class="table-wrapper">
+  <table>
+    <thead>
+      <tr>
+        <th class="c-tot">晨总</th>
+        <th class="c-name" id="th-name">名称</th>
+        <th class="c-num">前出</th>
+        <th class="c-num">终盘</th>
+        <th class="c-num">后补</th>
+        <th class="c-copy th-copy">出库公式</th>
+        <th class="c-copy th-copy">结余公式</th>
+        <th class="c-del">删</th>
+      </tr>
+    </thead>
+    <tbody id="tBody"></tbody>
+  </table>
+</div>
+
+<div class="bottom-bar">
+  <button class="btn-action btn-add" id="btnAddRow">➕ 增加一行</button>
+  <button class="btn-action btn-clear" id="btnClear">🗑️ 清空当前页数字</button>
+</div>
+
+<script>
+let currentRoom = parseInt(localStorage.getItem('hospital_last_room')) || 1; 
+let currentType = localStorage.getItem('hospital_last_type') || 'drug'; 
+
+const defaultLists = {
+    'consumable': ['造影导管','指引导管','导丝','动脉鞘','球囊扩张导管','冠脉支架'],
+    'drug': ['肝素钠','利多卡因','造影剂','生理盐水','硝酸甘油','去甲肾上腺素']
+};
+
+function createRow() {
+    let tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="number" inputmode="numeric" class="in-total"></td>
+      <td><input type="text" class="in-name" placeholder="名称"></td>
+      <td><input type="number" inputmode="numeric" class="in-out"></td>
+      <td><input type="number" inputmode="numeric" class="in-rem"></td>
+      <td><input type="number" inputmode="numeric" class="in-add"></td>
+      <td class="c-copy"><span class="log-text out-log">-</span></td>
+      <td class="c-copy"><span class="log-text rem-log">-</span></td>
+      <td><button class="btn-del">✖</button></td>
+    `;
+    return tr;
+}
+
+function calc(tr) {
+    let totalStr = tr.querySelector('.in-total').value;
+    let outStr = tr.querySelector('.in-out').value;
+    let remStr = tr.querySelector('.in-rem').value;
+    let addStr = tr.querySelector('.in-add').value;
+
+    let total = parseInt(totalStr) || 0;
+    let preOut = parseInt(outStr) || 0;
+    let counted = parseInt(remStr) || 0;
+    let add = parseInt(addStr) || 0;
+
+    let outLog = tr.querySelector('.out-log');
+    let remLog = tr.querySelector('.rem-log');
+
+    if (totalStr === "") { outLog.innerHTML = '-'; remLog.innerHTML = '-'; return; }
+    if (remStr === "") { outLog.innerHTML = outStr !== "" ? '<span class="num-final">' + preOut + '</span>' : "-"; remLog.innerHTML = "-"; return; }
+
+    let diff = total - preOut - counted; 
+    let outHtml = '<span class="num-base">' + preOut + '</span>';
+    if (diff > 0) outHtml += '<span class="num-add">+' + diff + '</span>';
+    else if (diff < 0) outHtml += '<span class="num-sub">' + diff + '</span>';
+    let finalOut = preOut + diff; 
+    outHtml += '=<span class="num-final">' + finalOut + '</span>';
+    outLog.innerHTML = outHtml;
+
+    let rHtml = '<span class="num-base">' + counted + '</span>';
+    if (addStr !== "" && add > 0) rHtml += '<span class="num-stock">+' + add + '</span>';
+    let finalRem = counted + add;
+    rHtml += '=<span class="num-final">' + finalRem + '</span>';
+    remLog.innerHTML = rHtml;
+}
+
+function getStorageKey() { return 'hospital_v12_room_' + currentRoom + '_' + currentType; }
+
+function saveData() {
+    let data = [];
+    document.querySelectorAll('#tBody tr').forEach(tr => {
+        data.push({
+            total: tr.querySelector('.in-total').value, name: tr.querySelector('.in-name').value,
+            out: tr.querySelector('.in-out').value, rem: tr.querySelector('.in-rem').value,
+            add: tr.querySelector('.in-add').value
+        });
+    });
+    localStorage.setItem(getStorageKey(), JSON.stringify(data));
+}
+
+function loadData() {
+    let tbody = document.getElementById('tBody');
+    tbody.innerHTML = ''; 
+    let saved = localStorage.getItem(getStorageKey());
+    if(saved && saved !== '[]') {
+        JSON.parse(saved).forEach((item) => {
+            let tr = createRow(); tbody.appendChild(tr);
+            tr.querySelector('.in-total').value = item.total || ''; tr.querySelector('.in-name').value = item.name || '';
+            tr.querySelector('.in-out').value = item.out || ''; tr.querySelector('.in-rem').value = item.rem || '';
+            tr.querySelector('.in-add').value = item.add || ''; calc(tr);
+        });
+    } else {
+        defaultLists[currentType].forEach((name) => {
+            let tr = createRow(); tbody.appendChild(tr); tr.querySelector('.in-name').value = name;
+        });
+    }
+}
+
+function switchRoom(roomNum, btnElement) {
+    saveData(); currentRoom = roomNum; localStorage.setItem('hospital_last_room', currentRoom); 
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active')); btnElement.classList.add('active');
+    btnElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); loadData(); 
+}
+
+function switchType(type) {
+    saveData(); currentType = type; localStorage.setItem('hospital_last_type', currentType); 
+    document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`.type-btn[data-type="${type}"]`).classList.add('active');
+    let body = document.getElementById('appBody'); let thName = document.getElementById('th-name');
+    if(type === 'drug') { body.classList.add('theme-drug'); thName.innerText = '药品名称'; } 
+    else { body.classList.remove('theme-drug'); thName.innerText = '耗材名称'; }
+    loadData(); 
+}
+
+document.getElementById('tBody').addEventListener('click', function(e) {
+    if (e.target.classList.contains('btn-del') && confirm("确定删除这行吗？")) { e.target.closest('tr').remove(); saveData(); }
+});
+document.getElementById('tBody').addEventListener('input', function(e) {
+    if (e.target.tagName === 'INPUT') { calc(e.target.closest('tr')); saveData(); }
+});
+document.getElementById('btnAddRow').addEventListener('click', function() {
+    document.getElementById('tBody').appendChild(createRow()); saveData(); window.scrollTo(0, document.body.scrollHeight);
+});
+document.getElementById('btnClear').addEventListener('click', function() {
+    let roomName = document.querySelector('.tab-btn.active').innerText;
+    let typeName = currentType === 'drug' ? '药品' : '耗材';
+    if(confirm(`确定要清空 【${roomName} - ${typeName}】 的盘点数字吗？\n\n(仅清空当前页数字，名称保留，其他房间不受影响)`)) {
+        document.querySelectorAll('#tBody tr').forEach(tr => {
+            tr.querySelector('.in-total').value = ''; tr.querySelector('.in-out').value = '';
+            tr.querySelector('.in-rem').value = ''; tr.querySelector('.in-add').value = ''; calc(tr);
+        });
+        saveData();
+    }
+});
+
+window.onload = function() {
+    let activeRoomBtn = document.querySelector(`.room-tabs .tab-btn:nth-child(${currentRoom})`);
+    if(activeRoomBtn) { activeRoomBtn.classList.add('active'); setTimeout(() => activeRoomBtn.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' }), 50); }
+    let body = document.getElementById('appBody'); let thName = document.getElementById('th-name');
+    document.querySelector(`.type-btn[data-type="${currentType}"]`).classList.add('active');
+    if(currentType === 'drug') { body.classList.add('theme-drug'); thName.innerText = '药品名称'; } 
+    else { body.classList.remove('theme-drug'); thName.innerText = '耗材名称'; }
+    loadData();
+};
+
+// 离线引擎启动代码！
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js')
+    .then(reg => console.log('离线模式已激活!', reg))
+    .catch(err => console.log('离线模式激活失败', err));
+}
+</script>
+</body>
+</html>
