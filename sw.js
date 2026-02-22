@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dsa-app-v4.2.1';
+const CACHE_NAME = 'dsa-app-v5';
 const urlsToCache = [
   './',
   './index.html',
