@@ -28,11 +28,12 @@
   td { padding: 4px 1px; border-bottom: 1px solid #eee; vertical-align: middle; height: 46px; } 
   tbody tr:nth-child(even) { background-color: #f8fafd; }
   
+  /* ---- 重新分配列宽：给公式区续命 1% ---- */
   .c-tot { width: 9%; }   
   .c-name { width: 17%; } 
   .c-num { width: 10%; }  
-  .c-copy { width: 16%; background: #fffde7; border-left: 1px dashed #e0e0e0; } 
-  .c-act { width: 12%; }  
+  .c-copy { width: 16.5%; background: #fffde7; border-left: 1px dashed #e0e0e0; } /* 从 16 变成 16.5 */
+  .c-act { width: 11%; }  /* 操作列从 12 压缩到 11 */
   
   th.th-copy { background: #fbc02d; color: #333; font-weight: bold; border-left: 1px dashed #fff; font-size: 11px; padding: 0;}
   
@@ -154,24 +155,19 @@ function createRow() {
     return tr;
 }
 
-// ------------------------------------------
-// 核心优化：彻底解放空间的大字号缩放器
-// ------------------------------------------
+// ---- 微米级缩放控制：修复 0.01 的溢出感 ----
 function autoFitText(element) {
     let textLen = element.innerText.replace(/\s/g, '').length;
     
-    // 既然最多8个字符，我们直接大幅拉升字号下限！
     if (textLen >= 8) {
-        // 8个字符（如 52+20=72），字号从10.5暴增到13.5，间距放宽
-        element.style.fontSize = '13.5px';
-        element.style.letterSpacing = '-0.5px';
+        // 微调：从 13.5px 降到 13px，字距稍微收紧一丁点
+        element.style.fontSize = '13px';
+        element.style.letterSpacing = '-0.6px';
     } else if (textLen >= 5) {
-        // 5~7个字符，字号增加到14.5
         element.style.fontSize = '14.5px';
         element.style.letterSpacing = '-0.2px';
     } else {
-        // 个位数，直接顶到最大的16.5px，极其醒目
-        element.style.fontSize = '16.5px';
+        element.style.fontSize = '16px'; // 个位数保留巨大字号
         element.style.letterSpacing = 'normal';
     }
 }
@@ -233,7 +229,7 @@ function calc(tr) {
     }, 10);
 }
 
-function getStorageKey() { return 'hospital_v23_room_' + currentRoom + '_' + currentType; }
+function getStorageKey() { return 'hospital_v24_room_' + currentRoom + '_' + currentType; }
 
 function getTableDataAsJson() {
     let data = [];
