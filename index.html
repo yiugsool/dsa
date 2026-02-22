@@ -25,15 +25,14 @@
   table { width: 100%; border-collapse: collapse; text-align: center; font-size: 13px; table-layout: fixed; }
   th { background: #1a73e8; color: white; padding: 8px 0; font-weight: normal; font-size: 12px; transition: background 0.3s; }
   .theme-drug th { background: #1e8e3e; } 
-  td { padding: 4px 1px; border-bottom: 1px solid #eee; vertical-align: middle; height: 46px; } /* 单元格内边距缩小到1px */
+  td { padding: 4px 1px; border-bottom: 1px solid #eee; vertical-align: middle; height: 46px; } 
   tbody tr:nth-child(even) { background-color: #f8fafd; }
   
-  /* ---- 极限紧凑列宽分配（核心修改） ---- */
-  .c-tot { width: 9%; }   /* 晨总极限压缩 */
-  .c-name { width: 17%; } /* 名字留出空间 */
-  .c-num { width: 10%; }  /* 输入框刚好放下2位数 */
-  .c-copy { width: 16%; background: #fffde7; border-left: 1px dashed #e0e0e0; } /* 公式列大幅扩宽 */
-  .c-act { width: 12%; }  /* 操作列极限压缩 */
+  .c-tot { width: 9%; }   
+  .c-name { width: 17%; } 
+  .c-num { width: 10%; }  
+  .c-copy { width: 16%; background: #fffde7; border-left: 1px dashed #e0e0e0; } 
+  .c-act { width: 12%; }  
   
   th.th-copy { background: #fbc02d; color: #333; font-weight: bold; border-left: 1px dashed #fff; font-size: 11px; padding: 0;}
   
@@ -46,15 +45,21 @@
   .in-name:focus { box-shadow: none; border-bottom: 2px solid #1a73e8; }
   .theme-drug .in-name:focus { border-bottom: 2px solid #1e8e3e; }
   
-  /* ---- 公式字体特调：缩小字号、紧凑字间距 ---- */
-  .log-text { font-family: -apple-system, sans-serif; font-size: 11px; display: block; text-align: center; white-space: nowrap; letter-spacing: -0.8px; }
+  /* ---- 核心视觉引擎：加入顶级丝滑的贝塞尔曲线过渡动画 ---- */
+  .log-text { 
+      font-family: -apple-system, sans-serif; 
+      display: block; 
+      text-align: center; 
+      white-space: nowrap; 
+      /* 时间设为 0.35秒，使用极其舒适的非线性物理缓动 */
+      transition: font-size 0.35s cubic-bezier(0.4, 0, 0.2, 1), letter-spacing 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
   .num-base { color: #555; }
   .num-add { color: #d32f2f; font-weight: bold; }
   .num-sub { color: #388e3c; font-weight: bold; }
   .num-stock { color: #1976d2; font-weight: bold; }
-  .num-final { font-weight: bold; color: #000; font-size: 12px; } /* 最终结果稍大一点点 */
+  .num-final { font-weight: bold; color: #000; font-size: 1.15em; } 
   
-  /* ---- 操作列极限压缩 ---- */
   .act-wrap { display: flex; align-items: center; justify-content: center; height: 36px; padding: 0; gap: 1px; }
   .move-col { display: flex; flex-direction: column; justify-content: space-between; height: 100%; width: 22px; gap: 2px; }
   .btn-up, .btn-dn { flex: 1; background: #e8f0fe; color: #1a73e8; border: none; border-radius: 3px; font-size: 10px; cursor: pointer; padding: 0; }
@@ -151,6 +156,22 @@ function createRow() {
     return tr;
 }
 
+// 智能字号缩放器
+function autoFitText(element) {
+    let textLen = element.innerText.replace(/\s/g, '').length;
+    
+    if (textLen >= 8) {
+        element.style.fontSize = '10.5px';
+        element.style.letterSpacing = '-0.8px';
+    } else if (textLen >= 5) {
+        element.style.fontSize = '12.5px';
+        element.style.letterSpacing = '-0.3px';
+    } else {
+        element.style.fontSize = '15.5px';
+        element.style.letterSpacing = 'normal';
+    }
+}
+
 function calc(tr) {
     let totalInput = tr.querySelector('.in-total');
     let outInput = tr.querySelector('.in-out');
@@ -162,7 +183,6 @@ function calc(tr) {
     let remStr = remInput.value;
     let addStr = addInput.value;
 
-    // 逆向平账法：自动补全晨总
     if (totalStr === "" && outStr !== "" && remStr !== "") {
         let pOut = parseInt(outStr) || 0;
         let pRem = parseInt(remStr) || 0;
@@ -180,42 +200,38 @@ function calc(tr) {
     let outLog = tr.querySelector('.out-log');
     let remLog = tr.querySelector('.rem-log');
 
-    // 全空状态
+    // 核心渲染逻辑
     if (totalStr === "" && outStr === "" && remStr === "" && addStr === "") { 
-        outLog.innerHTML = '-'; remLog.innerHTML = '-'; return; 
-    }
-
-    // 正向预测法：展示理论结余 (保留原本的预测逻辑)
-    if (remStr === "") { 
+        outLog.innerHTML = '-'; 
+        remLog.innerHTML = '-'; 
+    } else if (remStr === "") { 
         let expectedRem = total - preOut + add;
         outLog.innerHTML = outStr !== "" ? '<span class="num-final">' + preOut + '</span>' : '<span class="num-final">0</span>'; 
-        
-        if (totalStr !== "") {
-            remLog.innerHTML = '<span class="num-final">' + expectedRem + '</span>';
-        } else {
-            remLog.innerHTML = "-"; 
-        }
-        return; 
+        remLog.innerHTML = totalStr !== "" ? '<span class="num-final">' + expectedRem + '</span>' : "-"; 
+    } else {
+        let diff = total - preOut - counted; 
+        let outHtml = '<span class="num-base">' + preOut + '</span>';
+        if (diff > 0) outHtml += '<span class="num-add">+' + diff + '</span>';
+        else if (diff < 0) outHtml += '<span class="num-sub">' + diff + '</span>';
+        let finalOut = preOut + diff; 
+        outHtml += '=<span class="num-final">' + finalOut + '</span>';
+        outLog.innerHTML = outHtml;
+
+        let rHtml = '<span class="num-base">' + counted + '</span>';
+        if (addStr !== "" && add > 0) rHtml += '<span class="num-stock">+' + add + '</span>';
+        let finalRem = counted + add;
+        rHtml += '=<span class="num-final">' + finalRem + '</span>';
+        remLog.innerHTML = rHtml;
     }
 
-    // ---- 恢复完整公式的显示逻辑（你要的差值溯源） ----
-    let diff = total - preOut - counted; 
-    
-    let outHtml = '<span class="num-base">' + preOut + '</span>';
-    if (diff > 0) outHtml += '<span class="num-add">+' + diff + '</span>';
-    else if (diff < 0) outHtml += '<span class="num-sub">' + diff + '</span>';
-    let finalOut = preOut + diff; 
-    outHtml += '=<span class="num-final">' + finalOut + '</span>';
-    outLog.innerHTML = outHtml;
-
-    let rHtml = '<span class="num-base">' + counted + '</span>';
-    if (addStr !== "" && add > 0) rHtml += '<span class="num-stock">+' + add + '</span>';
-    let finalRem = counted + add;
-    rHtml += '=<span class="num-final">' + finalRem + '</span>';
-    remLog.innerHTML = rHtml;
+    // 强制动画触发器：利用极短的定时器，确保浏览器先画出新字，再执行字号缩放
+    setTimeout(() => {
+        autoFitText(outLog);
+        autoFitText(remLog);
+    }, 10);
 }
 
-function getStorageKey() { return 'hospital_v20_room_' + currentRoom + '_' + currentType; }
+function getStorageKey() { return 'hospital_v22_room_' + currentRoom + '_' + currentType; }
 
 function getTableDataAsJson() {
     let data = [];
