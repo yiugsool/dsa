@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>DSA清点台 V25</title>
+<title>DSA清点台 V25.1</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1a73e8">
 <link rel="apple-touch-icon" href="icon.png">
@@ -28,11 +28,9 @@
   td { padding: 4px 1px; border-bottom: 1px solid #eee; vertical-align: middle; height: 46px; } 
   tbody tr:nth-child(even) { background-color: #f8fafd; }
   
-  /* LBS 房间双引擎的动态显示隐藏逻辑 */
   body.mode-dsa15 .c-dsa6-only { display: none; }
   body.mode-dsa6 .c-dsa15-only { display: none; }
 
-  /* 终极列宽分配 */
   .c-tot { width: 11%; }   
   .c-add { width: 10%; } 
   .c-name { width: 18%; } 
@@ -48,7 +46,6 @@
   input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
   input[type=number] { -moz-appearance: textfield; }
   
-  /* 资产区特殊底色提示（仅DSA 1-5 补货区） */
   body.mode-dsa15 .in-add-mid { background: #f0f8ff; border-color: #b6d4fe; }
 
   .in-name { text-align: left; border: none; border-bottom: 1px solid #ccc; border-radius: 0; background: transparent; font-size: 13px; padding-left: 2px; }
@@ -56,9 +53,9 @@
   .theme-drug .in-name:focus { border-bottom: 2px solid #1e8e3e; }
   
   .log-text { font-family: -apple-system, sans-serif; display: block; text-align: center; white-space: nowrap; transition: font-size 0.3s cubic-bezier(0.4, 0, 0.2, 1), letter-spacing 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-  .num-base { color: #000; font-size: 1.15em; font-weight: bold;} /* 原始出库数字加大 */
-  .num-add { color: #d32f2f; font-weight: bold; margin-left:1px; } /* 盘亏红字警报 */
-  .num-sub { color: #388e3c; font-weight: bold; margin-left:1px; } /* 盘盈绿字警报 */
+  .num-base { color: #000; font-size: 1.15em; font-weight: bold;} 
+  .num-add { color: #d32f2f; font-weight: bold; margin-left:1px; } 
+  .num-sub { color: #388e3c; font-weight: bold; margin-left:1px; } 
   .num-stock { color: #1976d2; font-weight: bold; }
   .num-final { font-weight: bold; color: #000; font-size: 1.25em; } 
   
@@ -69,13 +66,12 @@
   .theme-drug .move-col { display: none; }
   .theme-drug .btn-del { display: flex; width: 28px; height: 100%; background: #fce4e4; color: #d32f2f; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; align-items: center; justify-content: center; padding: 0; }
 
-  /* 底部导航栏自适应布局 */
   .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 8px; background: #fff; display: flex; gap: 4px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 100; overflow-x: auto;}
   .btn-action { flex: 1; min-width: 50px; padding: 10px 2px; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; white-space: nowrap; }
   .btn-add { background: #f1f3f5; color: #333; }
   .btn-top { background: #e8f0fe; color: #1a73e8; }
   .btn-fill { background: #e6f4ea; color: #1e8e3e; display: none; } 
-  .btn-forward { background: #e0f7fa; color: #00838f; border: 1px solid #b2ebf2; } /* 全新一键结转按钮 */
+  .btn-forward { background: #e0f7fa; color: #00838f; border: 1px solid #b2ebf2; } 
   .btn-undo { background: #fff3cd; color: #856404; }
   .btn-clear { background: #fce4e4; color: #c62828; }
 
@@ -177,7 +173,6 @@ function autoFitText(element) {
     }
 }
 
-// 核心：LBS地理双引擎计算器
 function calc(tr) {
     let isDSA6 = currentRoom === 6;
 
@@ -196,7 +191,6 @@ function calc(tr) {
     let counted = parseInt(remStr) || 0;
     let addPost = parseInt(addPostInput.value) || 0;
 
-    // 逆向推算昨日余量
     if (totalStr === "" && outStr !== "" && remStr !== "") {
         let calcTotal = isDSA6 ? (preOut + counted) : (preOut + counted - addMid); 
         totalInput.value = calcTotal >= 0 ? calcTotal : 0; 
@@ -207,14 +201,12 @@ function calc(tr) {
     let outLog = tr.querySelector('.out-log');
     let remLog = tr.querySelector('.rem-log');
 
-    // 空状态
     if (totalStr === "" && outStr === "" && remStr === "" && addMidInput.value === "" && addPostInput.value === "") { 
         outLog.innerHTML = '-'; remLog.innerHTML = '-'; 
         setTimeout(() => { autoFitText(outLog); autoFitText(remLog); }, 10);
         return; 
     }
 
-    // 正向预测预期结余
     if (remStr === "") { 
         let expectedRem = isDSA6 ? (total - preOut + addPost) : (total + addMid - preOut);
         outLog.innerHTML = outStr !== "" ? `<span class="num-final">${preOut}</span>` : `<span class="num-final">0</span>`; 
@@ -223,26 +215,19 @@ function calc(tr) {
         return; 
     }
 
-    // ============================================
-    // 终极严格审计逻辑：只展示原始记录和差值警报
-    // ============================================
     let theoryOut = isDSA6 ? (total - counted) : (total + addMid - counted);
-    let diff = theoryOut - preOut; // >0说明盘亏(用的比记的多)，<0说明盘盈(记的比用的多)
+    let diff = theoryOut - preOut; 
     let finalRem = isDSA6 ? (counted + addPost) : counted;
 
-    // 1. 出库警报（抛弃自作聪明的算式）
     let outHtml = `<span class="num-base">${preOut}</span>`;
-    if (diff > 0) outHtml += `<span class="num-add">+${diff}</span>`;      // 红字：提醒漏费
-    else if (diff < 0) outHtml += `<span class="num-sub">${diff}</span>`; // 绿字：提醒冲销退费
+    if (diff > 0) outHtml += `<span class="num-add">+${diff}</span>`;      
+    else if (diff < 0) outHtml += `<span class="num-sub">${diff}</span>`; 
     outLog.innerHTML = outHtml;
 
-    // 2. 真实结余（抛弃冗余，还原真相）
     let rHtml = "";
     if (isDSA6 && addPostInput.value !== "" && addPost > 0) {
-        // DSA 6 特有的时间差展示
         rHtml = `<span class="num-base" style="font-size:1em">${counted}</span><span class="num-stock">+${addPost}</span>=<span class="num-final">${finalRem}</span>`;
     } else {
-        // DSA 1-5 极简展示
         rHtml = `<span class="num-final">${finalRem}</span>`;
     }
     remLog.innerHTML = rHtml;
@@ -310,7 +295,6 @@ function loadData() {
             tr.querySelector('.in-name').value = item.name || '';
             tr.querySelector('.in-out').value = item.out || ''; 
             tr.querySelector('.in-rem').value = item.rem || '';
-            // 向下兼容：如果检测到旧版的 add 数据，自动分流到新框里
             if (item.add) {
                 if (currentRoom === 6) tr.querySelector('.in-add-post').value = item.add;
                 else tr.querySelector('.in-add-mid').value = item.add;
@@ -387,12 +371,15 @@ document.getElementById('btnAddRow').addEventListener('click', function() {
     pushHistory(); document.getElementById('tBody').appendChild(createRow()); saveData(); window.scrollTo(0, document.body.scrollHeight);
 });
 
+// ============================================
+// 修复点：移除了 '.in-rem'（终盘），保证未盘点的数据不被强行清零
+// ============================================
 document.getElementById('btnFill').addEventListener('click', function() {
     pushHistory();
     document.querySelectorAll('#tBody tr').forEach(tr => {
         let name = tr.querySelector('.in-name').value.trim();
         if (name !== "") {
-            ['.in-total', '.in-out', '.in-rem', '.in-add-mid', '.in-add-post'].forEach(sel => {
+            ['.in-total', '.in-out', '.in-add-mid', '.in-add-post'].forEach(sel => {
                 let inp = tr.querySelector(sel);
                 if (inp && inp.offsetParent !== null && inp.value === "") inp.value = "0";
             });
@@ -402,9 +389,6 @@ document.getElementById('btnFill').addEventListener('click', function() {
     saveData();
 });
 
-// ============================================
-// 终极自动化神技：一键结转今日
-// ============================================
 document.getElementById('btnForward').addEventListener('click', function() {
     let roomName = document.querySelector('.tab-btn.active').innerText;
     let typeName = currentType === 'drug' ? '药品' : '耗材';
@@ -422,7 +406,6 @@ document.getElementById('btnForward').addEventListener('click', function() {
             
             let name = tr.querySelector('.in-name').value.trim();
             
-            // 只处理有数据的行
             if (name !== "" || totalInput.value !== "" || outInput.value !== "" || remInput.value !== "") {
                 let total = parseInt(totalInput.value) || 0;
                 let addMid = parseInt(addMidInput.value) || 0;
@@ -432,21 +415,17 @@ document.getElementById('btnForward').addEventListener('click', function() {
                 
                 let finalRem = 0;
                 if (remInput.value === "") {
-                    // 如果中途偷懒结转，用预期值
                     finalRem = isDSA6 ? (total - preOut + addPost) : (total + addMid - preOut);
                 } else {
-                    // 正常结转，用确切盘点值
                     finalRem = isDSA6 ? (counted + addPost) : counted;
                 }
                 
-                // 将算出的最终结余，硬性赋予给昨日余量
                 if (finalRem > 0 || totalInput.value !== "") {
                     totalInput.value = finalRem >= 0 ? finalRem : 0;
                 } else {
                     totalInput.value = "";
                 }
                 
-                // 抹除流水战场
                 outInput.value = '';
                 remInput.value = '';
                 addMidInput.value = '';
