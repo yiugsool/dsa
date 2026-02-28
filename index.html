@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>DSA清点台 V25.1</title>
+<title>DSA清点台 V28.1 (完美修复版)</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1a73e8">
 <link rel="apple-touch-icon" href="icon.png">
@@ -11,19 +11,36 @@
 <style>
   body { font-family: -apple-system, sans-serif; margin: 0; padding: 5px; background: #f0f2f5; color: #333; padding-bottom: 75px; }
   h3 { text-align: center; margin: 10px 0 8px 0; font-size: 16px; color: #111; }
+  
+  .top-sys-bar { display: flex; justify-content: space-between; align-items: center; background: #e3f2fd; padding: 6px 5px; border-radius: 6px; margin-bottom: 8px; font-size: 13px; font-weight: bold; color: #0d47a1; overflow-x: auto;}
+  .date-controls { display: flex; align-items: center; gap: 4px; }
+  .btn-date-nav { background: #fff; color: #1a73e8; border: 1px solid #90caf9; border-radius: 4px; padding: 3px 6px; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; }
+  .btn-date-nav:active { background: #bbdefb; }
+  .date-picker { border: 1px solid #90caf9; border-radius: 4px; padding: 2px 2px; color: #0d47a1; background: #fff; font-weight: bold; outline: none; font-size: 13px; }
+  
+  .user-info { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .btn-logout { background: #ffcdd2; color: #c62828; border: none; border-radius: 4px; padding: 2px 6px; font-size: 11px; cursor: pointer; }
+
+  /* 锁定状态反馈 */
+  body.is-locked .table-wrapper input { background: #f5f5f5 !important; color: #9e9e9e !important; pointer-events: none; border-color: #e0e0e0 !important; }
+  body.is-locked .btn-up, body.is-locked .btn-dn, body.is-locked .btn-del, body.is-locked .btn-add, body.is-locked .btn-top, body.is-locked .btn-clear { opacity: 0.3; pointer-events: none; }
+  
+  input.is-readonly { background: #eeeeee !important; color: #616161 !important; pointer-events: none; border: 1px dashed #bdbdbd !important; }
+  .theme-drug input.is-readonly { background: #e8f5e9 !important; border-color: #a5d6a7 !important;}
+
   .nav-header { background: #fff; padding: 8px 5px; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); margin-bottom: 10px; }
   .room-tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 10px; padding-bottom: 4px; scroll-behavior: smooth; }
   .room-tabs::-webkit-scrollbar { display: none; }
-  .room-tabs { -ms-overflow-style: none; scrollbar-width: none; }
   .tab-btn { flex: 0 0 auto; padding: 8px 16px; background: #f1f3f5; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; color: #666; cursor: pointer; transition: all 0.2s; }
   .tab-btn.active { background: #343a40; color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transform: scale(1.02); }
   .type-tabs { display: flex; gap: 8px; }
   .type-btn { flex: 1; padding: 8px 0; border: 1px solid #ddd; background: #fff; border-radius: 20px; font-size: 14px; font-weight: bold; color: #555; cursor: pointer; transition: all 0.2s; }
   .type-btn[data-type="consumable"].active { background: #e8f0fe; color: #1a73e8; border-color: #1a73e8; }
   .type-btn[data-type="drug"].active { background: #e6f4ea; color: #1e8e3e; border-color: #1e8e3e; }
+  
   .table-wrapper { background: #fff; border-radius: 6px; box-shadow: 0 1px 6px rgba(0,0,0,0.08); overflow: hidden; }
   table { width: 100%; border-collapse: collapse; text-align: center; font-size: 13px; table-layout: fixed; }
-  th { background: #1a73e8; color: white; padding: 8px 0; font-weight: normal; font-size: 11px; transition: background 0.3s; }
+  th { background: #1a73e8; color: white; padding: 8px 0; font-weight: normal; font-size: 11px; }
   .theme-drug th { background: #1e8e3e; } 
   td { padding: 4px 1px; border-bottom: 1px solid #eee; vertical-align: middle; height: 46px; } 
   tbody tr:nth-child(even) { background-color: #f8fafd; }
@@ -31,16 +48,11 @@
   body.mode-dsa15 .c-dsa6-only { display: none; }
   body.mode-dsa6 .c-dsa15-only { display: none; }
 
-  .c-tot { width: 11%; }   
-  .c-add { width: 10%; } 
-  .c-name { width: 18%; } 
-  .c-num { width: 10%; }  
-  .c-copy { width: 15%; background: #fffde7; border-left: 1px dashed #e0e0e0; } 
-  .c-act { width: 11%; }  
-  
+  .c-tot { width: 11%; } .c-add { width: 10%; } .c-name { width: 18%; } .c-num { width: 10%; } 
+  .c-copy { width: 15%; background: #fffde7; border-left: 1px dashed #e0e0e0; } .c-act { width: 11%; }  
   th.th-copy { background: #fbc02d; color: #333; font-weight: bold; border-left: 1px dashed #fff; font-size: 11px; padding: 0;}
   
-  input { width: 100%; height: 32px; border: 1px solid #ccc; outline: none; border-radius: 4px; text-align: center; box-sizing: border-box; font-size: 14px; background: #fff; padding: 0; }
+  input { width: 100%; height: 32px; border: 1px solid #ccc; outline: none; border-radius: 4px; text-align: center; box-sizing: border-box; font-size: 14px; background: #fff; padding: 0; transition: all 0.3s;}
   input:focus { border-color: #1a73e8; background: #e8f0fe; box-shadow: inset 0 0 0 1px #1a73e8; }
   .theme-drug input:focus { border-color: #1e8e3e; background: #e6f4ea; box-shadow: inset 0 0 0 1px #1e8e3e; }
   input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
@@ -52,38 +64,65 @@
   .in-name:focus { box-shadow: none; border-bottom: 2px solid #1a73e8; }
   .theme-drug .in-name:focus { border-bottom: 2px solid #1e8e3e; }
   
-  .log-text { font-family: -apple-system, sans-serif; display: block; text-align: center; white-space: nowrap; transition: font-size 0.3s cubic-bezier(0.4, 0, 0.2, 1), letter-spacing 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  .log-text { font-family: -apple-system, sans-serif; display: block; text-align: center; white-space: nowrap; transition: font-size 0.3s, letter-spacing 0.3s; }
   .num-base { color: #000; font-size: 1.15em; font-weight: bold;} 
   .num-add { color: #d32f2f; font-weight: bold; margin-left:1px; } 
   .num-sub { color: #388e3c; font-weight: bold; margin-left:1px; } 
   .num-stock { color: #1976d2; font-weight: bold; }
   .num-final { font-weight: bold; color: #000; font-size: 1.25em; } 
   
+  /* 动态操作列 */
   .act-wrap { display: flex; align-items: center; justify-content: center; height: 36px; padding: 0; gap: 1px; }
   .move-col { display: flex; flex-direction: column; justify-content: space-between; height: 100%; width: 22px; gap: 2px; }
   .btn-up, .btn-dn { flex: 1; background: #e8f0fe; color: #1a73e8; border: none; border-radius: 3px; font-size: 10px; cursor: pointer; padding: 0; }
-  .btn-del { display: none; } 
-  .theme-drug .move-col { display: none; }
-  .theme-drug .btn-del { display: flex; width: 28px; height: 100%; background: #fce4e4; color: #d32f2f; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; align-items: center; justify-content: center; padding: 0; }
+  .btn-del { display: none; width: 28px; height: 100%; background: #fce4e4; color: #d32f2f; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; align-items: center; justify-content: center; padding: 0; }
+
+  /* 废料分割线 */
+  .divider-top td { border-top: 2px dashed #999 !important; position: relative; }
 
   .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 8px; background: #fff; display: flex; gap: 4px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 100; overflow-x: auto;}
-  .btn-action { flex: 1; min-width: 50px; padding: 10px 2px; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; white-space: nowrap; }
+  .btn-action { flex: 1; min-width: 45px; padding: 10px 2px; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; white-space: nowrap; }
   .btn-add { background: #f1f3f5; color: #333; }
-  .btn-top { background: #e8f0fe; color: #1a73e8; }
-  .btn-fill { background: #e6f4ea; color: #1e8e3e; display: none; } 
-  .btn-forward { background: #e0f7fa; color: #00838f; border: 1px solid #b2ebf2; } 
-  .btn-undo { background: #fff3cd; color: #856404; }
-  .btn-clear { background: #fce4e4; color: #c62828; }
+  .btn-top { background: #e8f0fe; color: #1a73e8; } 
+  .btn-undo { background: #e0f7fa; color: #006064; border: 1px solid #b2ebf2; }
+  .btn-upload { background: #fff3cd; color: #f57f17; border: 1px solid #ffe082; }
+  .btn-unlock { background: #ffebee; color: #d32f2f; border: 1px solid #ffcdd2; display: none; }
+  .btn-summary { background: #e8eaf6; color: #3f51b5; border: 1px solid #c5cae9; } 
+  
+  body.is-locked .btn-upload { display: none; }
+  body.is-locked .btn-unlock { display: block; }
 
-  .theme-drug .btn-top { display: none; }
-  .theme-drug .btn-fill { display: block; }
-
-  .divider-top td { border-top: 2px dashed #999 !important; position: relative; }
+  #loginOverlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+  .login-box { background: #fff; padding: 25px; border-radius: 10px; text-align: center; width: 260px; }
+  .login-box h2 { margin-top: 0; font-size: 18px; color: #1a73e8; }
+  .login-box input { margin-bottom: 15px; height: 40px; }
+  .login-box button { width: 100%; height: 40px; background: #1a73e8; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
 </style>
 </head>
 <body id="appBody" class="mode-dsa15">
 
-<h3>🏥 DSA 双轨平账台</h3>
+<div id="loginOverlay">
+  <div class="login-box">
+    <h2>🏥 验证身份</h2>
+    <input type="text" id="loginName" placeholder="请输入您的姓名/工号">
+    <button onclick="doLogin()">进入系统</button>
+  </div>
+</div>
+
+<div class="top-sys-bar">
+  <div class="date-controls">
+    <button class="btn-date-nav" onclick="changeDateBy(-1)">◀ 前一日</button>
+    <input type="date" id="sysDate" class="date-picker">
+    <button class="btn-date-nav" onclick="changeDateBy(1)">后一日 ▶</button>
+    <button class="btn-date-nav" onclick="goToToday()">回今天 🔵</button>
+  </div>
+  <div class="user-info">
+    👤 <span id="displayUser">未登录</span>
+    <button class="btn-logout" onclick="doLogout()">退出</button>
+  </div>
+</div>
+
+<h3>🏥 DSA 双轨平账台 V28.1</h3>
 
 <div class="nav-header">
   <div class="room-tabs" id="roomTabs">
@@ -122,60 +161,110 @@
 <div class="bottom-bar">
   <button class="btn-action btn-add" id="btnAddRow">➕新增</button>
   <button class="btn-action btn-top" id="btnTop">⬆️排序</button>
-  <button class="btn-action btn-fill" id="btnFill">✅补零</button>
-  <button class="btn-action btn-forward" id="btnForward">🔄结转</button>
   <button class="btn-action btn-undo" id="btnUndo">↩️撤销</button>
-  <button class="btn-action btn-clear" id="btnClear">🗑️清空</button>
+  <button class="btn-action btn-upload" id="btnUpload">☁️上传定稿</button>
+  <button class="btn-action btn-unlock" id="btnUnlock">🔓解锁修改</button>
+  <button class="btn-action btn-summary" id="btnSummary" onclick="alert('全科综合统计面板开发中...')">📊总结</button>
 </div>
 
 <script>
+// --- V28.1 身份认证 ---
+let currentUser = localStorage.getItem('hospital_user');
+if (currentUser) {
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('displayUser').innerText = currentUser;
+}
+function doLogin() {
+    let name = document.getElementById('loginName').value.trim();
+    if (!name) return alert('请输入姓名');
+    localStorage.setItem('hospital_user', name);
+    document.getElementById('displayUser').innerText = name;
+    document.getElementById('loginOverlay').style.display = 'none';
+    currentUser = name;
+}
+function doLogout() {
+    localStorage.removeItem('hospital_user');
+    location.reload();
+}
+
+// --- 时间导航与隔离存储 ---
+let dateInput = document.getElementById('sysDate');
+
+function getLocalTodayString() {
+    let d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().split('T')[0];
+}
+
+let todayStr = getLocalTodayString();
+dateInput.value = todayStr;
+
+function changeDateBy(days) {
+    let d = new Date(dateInput.value);
+    if(isNaN(d.getTime())) d = new Date(); 
+    d.setDate(d.getDate() + days);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    dateInput.value = d.toISOString().split('T')[0];
+    dateInput.dispatchEvent(new Event('change'));
+}
+function goToToday() {
+    dateInput.value = getLocalTodayString();
+    dateInput.dispatchEvent(new Event('change'));
+}
+
+dateInput.addEventListener('change', function() {
+    if (this.value !== getLocalTodayString()) { document.body.classList.add('is-locked'); } 
+    else { checkLockState(); }
+    loadData(); 
+});
+
 let currentRoom = parseInt(localStorage.getItem('hospital_last_room')) || 1; 
 let currentType = localStorage.getItem('hospital_last_type') || 'drug'; 
-let historyStack = {}; 
+let historyStack = [];
 
-const defaultLists = {
-    'consumable': ['造影导管','指引导管','导丝','动脉鞘','球囊扩张导管','冠脉支架'],
-    'drug': ['肝素钠','利多卡因','造影剂','生理盐水','硝酸甘油','去甲肾上腺素']
-};
+function getStorageKey(dateString = dateInput.value) { 
+    return `hospital_v28_room_${currentRoom}_${currentType}_${dateString}`; 
+}
+function getLockKey(dateString = dateInput.value) { 
+    return `hospital_v28_locked_${currentRoom}_${currentType}_${dateString}`; 
+}
 
-function createRow() {
-    let tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><input type="number" inputmode="numeric" class="in-total"></td>
-      <td class="c-dsa15-only"><input type="number" inputmode="numeric" class="in-add-mid"></td>
-      <td><input type="text" class="in-name" placeholder="名称"></td>
-      <td><input type="number" inputmode="numeric" class="in-out"></td>
-      <td><input type="number" inputmode="numeric" class="in-rem"></td>
-      <td class="c-dsa6-only"><input type="number" inputmode="numeric" class="in-add-post"></td>
-      <td class="c-copy"><span class="log-text out-log">-</span></td>
-      <td class="c-copy"><span class="log-text rem-log">-</span></td>
-      <td class="c-act">
-        <div class="act-wrap">
-          <div class="move-col"><button class="btn-up">▲</button><button class="btn-dn">▼</button></div>
-          <button class="btn-del">✖</button>
-        </div>
-      </td>
-    `;
-    return tr;
+function checkLockState() {
+    let locked = localStorage.getItem(getLockKey()) === 'true';
+    if(dateInput.value !== getLocalTodayString()) locked = true; 
+    if (locked) document.body.classList.add('is-locked');
+    else document.body.classList.remove('is-locked');
+}
+
+let baseSnapshot = "[]"; 
+
+// --- 动态操作列刷新逻辑 (Bug已修复：只校验数字框，排除了名称框) ---
+function refreshActionCol(tr) {
+    // 专门筛选出代表资产数据的数字框
+    let numInputs = tr.querySelectorAll('.in-total, .in-add-mid, .in-out, .in-rem, .in-add-post');
+    let hasData = Array.from(numInputs).some(inp => inp.value !== "" && inp.value !== "0");
+    
+    let moveCol = tr.querySelector('.move-col');
+    let delBtn = tr.querySelector('.btn-del');
+    
+    if (hasData) {
+        moveCol.style.display = 'flex'; // 有数字，只能上下移
+        delBtn.style.display = 'none';
+    } else {
+        moveCol.style.display = 'none'; // 全空，变为垃圾桶
+        delBtn.style.display = 'flex';
+    }
 }
 
 function autoFitText(element) {
     let textLen = element.innerText.replace(/\s/g, '').length;
-    if (textLen >= 8) {
-        element.style.fontSize = '12.5px';
-        element.style.letterSpacing = '-0.6px';
-    } else if (textLen >= 5) {
-        element.style.fontSize = '14px';
-        element.style.letterSpacing = '-0.2px';
-    } else {
-        element.style.fontSize = '16px'; 
-        element.style.letterSpacing = 'normal';
-    }
+    if (textLen >= 8) { element.style.fontSize = '12.5px'; element.style.letterSpacing = '-0.6px'; } 
+    else if (textLen >= 5) { element.style.fontSize = '14px'; element.style.letterSpacing = '-0.2px'; } 
+    else { element.style.fontSize = '16px'; element.style.letterSpacing = 'normal'; }
 }
 
+// 恢复 V27 极其稳定的结算逻辑
 function calc(tr) {
     let isDSA6 = currentRoom === 6;
-
     let totalInput = tr.querySelector('.in-total');
     let addMidInput = tr.querySelector('.in-add-mid');
     let outInput = tr.querySelector('.in-out');
@@ -186,32 +275,26 @@ function calc(tr) {
     let outStr = outInput.value;
     let remStr = remInput.value;
     
+    let total = parseInt(totalStr) || 0;
     let addMid = parseInt(addMidInput.value) || 0;
     let preOut = parseInt(outStr) || 0;
-    let counted = parseInt(remStr) || 0;
+    let counted = parseInt(remStr);
     let addPost = parseInt(addPostInput.value) || 0;
 
-    if (totalStr === "" && outStr !== "" && remStr !== "") {
-        let calcTotal = isDSA6 ? (preOut + counted) : (preOut + counted - addMid); 
-        totalInput.value = calcTotal >= 0 ? calcTotal : 0; 
-        totalStr = totalInput.value; 
-    }
-
-    let total = parseInt(totalStr) || 0;
     let outLog = tr.querySelector('.out-log');
     let remLog = tr.querySelector('.rem-log');
 
     if (totalStr === "" && outStr === "" && remStr === "" && addMidInput.value === "" && addPostInput.value === "") { 
         outLog.innerHTML = '-'; remLog.innerHTML = '-'; 
-        setTimeout(() => { autoFitText(outLog); autoFitText(remLog); }, 10);
+        refreshActionCol(tr); // 触发动态按钮刷新
         return; 
     }
 
-    if (remStr === "") { 
+    if (isNaN(counted)) { 
         let expectedRem = isDSA6 ? (total - preOut + addPost) : (total + addMid - preOut);
         outLog.innerHTML = outStr !== "" ? `<span class="num-final">${preOut}</span>` : `<span class="num-final">0</span>`; 
         remLog.innerHTML = totalStr !== "" ? `<span class="num-final">${expectedRem}</span>` : "-"; 
-        setTimeout(() => { autoFitText(outLog); autoFitText(remLog); }, 10);
+        refreshActionCol(tr);
         return; 
     }
 
@@ -233,9 +316,30 @@ function calc(tr) {
     remLog.innerHTML = rHtml;
 
     setTimeout(() => { autoFitText(outLog); autoFitText(remLog); }, 10);
+    refreshActionCol(tr); // 计算完毕后触发动态按钮刷新
 }
 
-function getStorageKey() { return 'hospital_v25_room_' + currentRoom + '_' + currentType; }
+// --- 表格渲染与数据处理 ---
+function createRow() {
+    let tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="number" inputmode="numeric" class="in-total"></td>
+      <td class="c-dsa15-only"><input type="number" inputmode="numeric" class="in-add-mid"></td>
+      <td><input type="text" class="in-name" placeholder="名称"></td>
+      <td><input type="number" inputmode="numeric" class="in-out"></td>
+      <td><input type="number" inputmode="numeric" class="in-rem"></td>
+      <td class="c-dsa6-only"><input type="number" inputmode="numeric" class="in-add-post"></td>
+      <td class="c-copy"><span class="log-text out-log">-</span></td>
+      <td class="c-copy"><span class="log-text rem-log">-</span></td>
+      <td class="c-act">
+        <div class="act-wrap">
+          <div class="move-col"><button class="btn-up">▲</button><button class="btn-dn">▼</button></div>
+          <button class="btn-del">✖</button>
+        </div>
+      </td>
+    `;
+    return tr;
+}
 
 function getTableDataAsJson() {
     let data = [];
@@ -249,82 +353,294 @@ function getTableDataAsJson() {
             addPost: tr.querySelector('.in-add-post').value
         });
     });
-    return JSON.stringify(data);
+    return data;
 }
 
 function pushHistory() {
-    let key = getStorageKey();
-    if (!historyStack[key]) historyStack[key] = [];
-    historyStack[key].push(getTableDataAsJson());
-    if (historyStack[key].length > 15) historyStack[key].shift(); 
+    historyStack.push(JSON.stringify(getTableDataAsJson()));
+    if(historyStack.length > 20) historyStack.shift();
 }
 
-document.getElementById('btnUndo').addEventListener('click', function() {
-    let key = getStorageKey();
-    if (!historyStack[key] || historyStack[key].length === 0) {
-        alert('暂无可以撤销的操作了'); return;
-    }
-    let previousStateStr = historyStack[key].pop();
-    let previousData = JSON.parse(previousStateStr);
-    
+function saveData() { localStorage.setItem(getStorageKey(), JSON.stringify(getTableDataAsJson())); }
+
+function renderTableFromData(dataList) {
     let tbody = document.getElementById('tBody');
     tbody.innerHTML = ''; 
-    previousData.forEach((item) => {
+    dataList.forEach((item) => {
         let tr = createRow(); tbody.appendChild(tr);
-        tr.querySelector('.in-total').value = item.total || ''; 
-        tr.querySelector('.in-name').value = item.name || '';
+        let inTotal = tr.querySelector('.in-total');
+        let inName = tr.querySelector('.in-name');
+        
+        inTotal.value = item.total || ''; 
+        inName.value = item.name || '';
         tr.querySelector('.in-out').value = item.out || ''; 
         tr.querySelector('.in-rem').value = item.rem || '';
         tr.querySelector('.in-add-mid').value = item.addMid || ''; 
         tr.querySelector('.in-add-post').value = item.addPost || ''; 
+        
+        if(item.name && item.name.trim() !== "") {
+            inName.readOnly = true; 
+            inName.classList.add('is-readonly');
+        }
+        if(item.total !== "" && item.total !== undefined) {
+            inTotal.readOnly = true;
+            inTotal.classList.add('is-readonly');
+        }
         calc(tr);
     });
+}
+
+function loadData() {
+    let saved = localStorage.getItem(getStorageKey());
+    if (saved && saved !== '[]') {
+        let parsed = JSON.parse(saved);
+        renderTableFromData(parsed);
+        baseSnapshot = JSON.stringify(parsed);
+    } else {
+        let prefix = `hospital_v28_room_${currentRoom}_${currentType}_`;
+        let pastDates = [];
+        for(let i=0; i<localStorage.length; i++) {
+            let key = localStorage.key(i);
+            if(key.startsWith(prefix) && !key.includes('locked')) {
+                let d = key.replace(prefix, '');
+                if(d < dateInput.value) pastDates.push(d);
+            }
+        }
+        
+        if (pastDates.length > 0) {
+            pastDates.sort();
+            let lastDate = pastDates[pastDates.length - 1];
+            let lastData = JSON.parse(localStorage.getItem(prefix + lastDate) || '[]');
+            
+            let isDSA6 = (currentRoom === 6);
+            let newData = [];
+            lastData.forEach(item => {
+                let total = parseInt(item.total) || 0;
+                let addMid = parseInt(item.addMid) || 0;
+                let preOut = parseInt(item.out) || 0;
+                let counted = parseInt(item.rem);
+                let addPost = parseInt(item.addPost) || 0;
+
+                let finalRem = isNaN(counted) ? (isDSA6 ? (total - preOut + addPost) : (total + addMid - preOut)) : (isDSA6 ? (counted + addPost) : counted);
+                
+                if(item.name && item.name.trim() !== "") {
+                     newData.push({
+                         name: item.name,
+                         total: finalRem >= 0 ? finalRem : 0, 
+                         out: '', rem: '', addMid: '', addPost: ''
+                     });
+                }
+            });
+            renderTableFromData(newData);
+            baseSnapshot = "[]"; 
+        } else {
+            let defaultLists = {
+                'consumable': ['造影导管','指引导管','导丝','动脉鞘','球囊扩张导管','冠脉支架'],
+                'drug': ['肝素钠','利多卡因','造影剂','生理盐水','硝酸甘油','去甲肾上腺素']
+            };
+            renderTableFromData(defaultLists[currentType].map(name => ({name: name})));
+            baseSnapshot = "[]";
+        }
+    }
+    checkLockState(); 
+}
+
+// --- 双轨排序引擎 (Bug已修复) ---
+document.getElementById('btnTop').addEventListener('click', function() {
+    if (document.body.classList.contains('is-locked')) return;
+    pushHistory();
+    let tbody = document.getElementById('tBody');
+    let rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    // 检查某行是否全是废料（只检测数字输入框）
+    const isZeroRow = (tr) => {
+        let numInputs = tr.querySelectorAll('.in-total, .in-add-mid, .in-out, .in-rem, .in-add-post');
+        return !Array.from(numInputs).some(i => i.value !== "" && i.value !== "0");
+    };
+
+    rows.forEach(tr => tr.classList.remove('divider-top'));
+    
+    if (currentType === 'consumable') {
+        // 耗材：四级提纯
+        let group1 = [], group2 = [], group3 = [], group4 = []; 
+        rows.forEach(tr => {
+            let total = parseInt(tr.querySelector('.in-total').value) || 0;
+            let outVal = parseInt(tr.querySelector('.in-out').value) || 0;
+            let counted = parseInt(tr.querySelector('.in-rem').value);
+            let addMid = parseInt(tr.querySelector('.in-add-mid').value) || 0;
+            let addPost = parseInt(tr.querySelector('.in-add-post').value) || 0;
+            
+            let finalRem = isNaN(counted) ? 0 : ((currentRoom === 6) ? (counted + addPost) : counted); 
+            
+            if (isZeroRow(tr)) {
+                group4.push(tr);
+            } else {
+                if (outVal > 0 || addMid > 0 || addPost > 0) {
+                    if (finalRem > 0) group1.push(tr);
+                    else group2.push(tr);
+                } else {
+                    if (finalRem > 0 || total > 0) group3.push(tr);
+                    else group4.push(tr); 
+                }
+            }
+        });
+        rows = [...group1, ...group2, ...group3, ...group4];
+        if (group4.length > 0) group4[0].classList.add('divider-top');
+    } else {
+        // 药品：两级过滤，保留原序
+        let active = [], inactive = [];
+        rows.forEach(tr => {
+            if (isZeroRow(tr)) inactive.push(tr);
+            else active.push(tr);
+        });
+        rows = [...active, ...inactive];
+        if (inactive.length > 0) inactive[0].classList.add('divider-top');
+    }
+    
+    tbody.innerHTML = '';
+    rows.forEach(tr => tbody.appendChild(tr));
     saveData(); 
 });
 
-function saveData() { localStorage.setItem(getStorageKey(), getTableDataAsJson()); }
-
-function loadData() {
-    let tbody = document.getElementById('tBody');
-    tbody.innerHTML = ''; 
-    let saved = localStorage.getItem(getStorageKey());
-    if(saved && saved !== '[]') {
-        JSON.parse(saved).forEach((item) => {
-            let tr = createRow(); tbody.appendChild(tr);
-            tr.querySelector('.in-total').value = item.total || ''; 
-            tr.querySelector('.in-name').value = item.name || '';
-            tr.querySelector('.in-out').value = item.out || ''; 
-            tr.querySelector('.in-rem').value = item.rem || '';
-            if (item.add) {
-                if (currentRoom === 6) tr.querySelector('.in-add-post').value = item.add;
-                else tr.querySelector('.in-add-mid').value = item.add;
-            } else {
-                tr.querySelector('.in-add-mid').value = item.addMid || ''; 
-                tr.querySelector('.in-add-post').value = item.addPost || ''; 
-            }
-            calc(tr);
-        });
-    } else {
-        defaultLists[currentType].forEach((name) => {
-            let tr = createRow(); tbody.appendChild(tr); tr.querySelector('.in-name').value = name;
-        });
+// --- 级联更新引擎 ---
+function runCascadeForward(room, type, startDateStr) {
+    let prefix = `hospital_v28_room_${room}_${type}_`;
+    let dates = [];
+    for(let i=0; i<localStorage.length; i++) {
+        let key = localStorage.key(i);
+        if(key.startsWith(prefix) && !key.includes('locked')) {
+            let d = key.replace(prefix, '');
+            if(d >= startDateStr) dates.push(d);
+        }
     }
+    dates.sort();
+    if(dates.length <= 1) return true; 
+
+    let memory = {}; 
+    dates.forEach(d => { memory[d] = JSON.parse(localStorage.getItem(prefix + d) || '[]'); });
+    memory[startDateStr] = getTableDataAsJson(); 
+
+    let isDSA6 = (room === 6);
+
+    for(let i = 0; i < dates.length - 1; i++) {
+        let currentDay = dates[i];
+        let nextDay = dates[i+1];
+
+        let endingBalances = {};
+        memory[currentDay].forEach(item => {
+            let name = (item.name || "").trim();
+            if(!name) return;
+            let total = parseInt(item.total) || 0;
+            let addMid = parseInt(item.addMid) || 0;
+            let preOut = parseInt(item.out) || 0;
+            let counted = parseInt(item.rem);
+            let addPost = parseInt(item.addPost) || 0;
+
+            let finalRem = isNaN(counted) ? (isDSA6 ? (total - preOut + addPost) : (total + addMid - preOut)) : (isDSA6 ? (counted + addPost) : counted);
+            endingBalances[name] = finalRem;
+        });
+
+        let nextData = memory[nextDay];
+        for(let j=0; j<nextData.length; j++) {
+            let item = nextData[j];
+            let name = (item.name || "").trim();
+            if(name && endingBalances.hasOwnProperty(name)) {
+                item.total = endingBalances[name]; 
+                
+                let nTotal = item.total;
+                let nAddMid = parseInt(item.addMid) || 0;
+                let nPreOut = parseInt(item.out) || 0;
+                let nCounted = parseInt(item.rem);
+                let nAddPost = parseInt(item.addPost) || 0;
+
+                let nextFinalRem = isNaN(nCounted) ? (isDSA6 ? (nTotal - nPreOut + nAddPost) : (nTotal + nAddMid - nPreOut)) : (isDSA6 ? (nCounted + nAddPost) : nCounted);
+
+                if(nextFinalRem < 0) {
+                    alert(`❌ 蝴蝶效应拦截！\n\n您在【${startDateStr}】的修改，将导致未来【${nextDay}】的 [${name}] 出现不可能的负库存 (${nextFinalRem})！\n\n请核对账目，修改已被驳回。`);
+                    return false; 
+                }
+            }
+        }
+    }
+
+    for(let i = 1; i < dates.length; i++) {
+        localStorage.setItem(prefix + dates[i], JSON.stringify(memory[dates[i]]));
+    }
+    return true;
 }
+
+// --- 按键监听 ---
+document.getElementById('btnUpload').addEventListener('click', function() {
+    let currentDataStr = JSON.stringify(getTableDataAsJson());
+    if(dateInput.value !== getLocalTodayString()) {
+        if(!runCascadeForward(currentRoom, currentType, dateInput.value)) return; 
+    }
+    if(baseSnapshot !== currentDataStr) {
+        console.log(`[审计日志] 🔒 ${currentUser} 在【${dateInput.value}】对 [DSA ${currentRoom}] 进行了数据定稿。`);
+        baseSnapshot = currentDataStr; 
+    }
+    document.body.classList.add('is-locked');
+    localStorage.setItem(getLockKey(), 'true');
+    saveData(); 
+    alert('✅ 账单已定稿锁定！');
+});
+
+document.getElementById('btnUnlock').addEventListener('click', function() {
+    let reason = prompt(`请输入解锁【${dateInput.value}】账单的原因：`);
+    if (reason && reason.trim() !== "") {
+        document.body.classList.remove('is-locked');
+        localStorage.setItem(getLockKey(), 'false');
+        document.querySelectorAll('#tBody tr').forEach(tr => {
+            let totalInput = tr.querySelector('.in-total');
+            totalInput.readOnly = false;
+            totalInput.classList.remove('is-readonly');
+        });
+    } else if(reason !== null) alert("❌ 解锁失败：必须填写原因。");
+});
+
+document.getElementById('btnUndo').addEventListener('click', function() {
+    if(document.body.classList.contains('is-locked')) return alert("锁定状态下无法撤销！");
+    if(historyStack.length === 0) return alert("没有可撤销的操作");
+    renderTableFromData(JSON.parse(historyStack.pop()));
+    saveData();
+});
+
+document.getElementById('btnAddRow').addEventListener('click', function() {
+    pushHistory(); document.getElementById('tBody').appendChild(createRow()); 
+    saveData(); window.scrollTo(0, document.body.scrollHeight);
+});
+
+let cellFocusValue = "";
+document.getElementById('tBody').addEventListener('focusin', function(e) { if (e.target.tagName === 'INPUT') cellFocusValue = e.target.value; });
+document.getElementById('tBody').addEventListener('change', function(e) {
+    if (e.target.tagName === 'INPUT' && e.target.value !== cellFocusValue) { 
+        let newVal = e.target.value; e.target.value = cellFocusValue; pushHistory();
+        e.target.value = newVal; calc(e.target.closest('tr')); saveData(); 
+    }
+});
+document.getElementById('tBody').addEventListener('input', function(e) { if (e.target.tagName === 'INPUT') { calc(e.target.closest('tr')); saveData(); } });
+
+document.getElementById('tBody').addEventListener('click', function(e) {
+    if (document.body.classList.contains('is-locked')) return;
+    let tr = e.target.closest('tr'); if(!tr) return;
+    if (e.target.closest('.btn-del')) { 
+        if(confirm("⚠️ 确认删除空条目吗？\n（今日及未来生效，历史保存）")) { pushHistory(); tr.remove(); saveData(); }
+    }
+    else if (e.target.closest('.btn-up')) { let prev = tr.previousElementSibling; if (prev) { pushHistory(); tr.parentNode.insertBefore(tr, prev); saveData(); } }
+    else if (e.target.closest('.btn-dn')) { let next = tr.nextElementSibling; if (next) { pushHistory(); tr.parentNode.insertBefore(next, tr); saveData(); } }
+});
 
 function applyRoomMode() {
     let body = document.getElementById('appBody');
     if (currentRoom === 6) { body.classList.remove('mode-dsa15'); body.classList.add('mode-dsa6'); } 
     else { body.classList.remove('mode-dsa6'); body.classList.add('mode-dsa15'); }
 }
-
 function switchRoom(roomNum, btnElement) {
     saveData(); currentRoom = roomNum; localStorage.setItem('hospital_last_room', currentRoom); 
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active')); btnElement.classList.add('active');
     btnElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); 
-    applyRoomMode();
-    loadData(); 
+    historyStack = []; applyRoomMode(); loadData(); 
 }
-
 function switchType(type) {
     saveData(); currentType = type; localStorage.setItem('hospital_last_type', currentType); 
     document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
@@ -332,182 +648,8 @@ function switchType(type) {
     let body = document.getElementById('appBody'); let thName = document.getElementById('th-name');
     if(type === 'drug') { body.classList.add('theme-drug'); thName.innerText = '药品名称'; } 
     else { body.classList.remove('theme-drug'); thName.innerText = '耗材名称'; }
-    loadData(); 
+    historyStack = []; loadData(); 
 }
-
-document.getElementById('tBody').addEventListener('click', function(e) {
-    let tr = e.target.closest('tr');
-    if (!tr) return;
-    
-    if (e.target.closest('.btn-del') && confirm("确定删除这行吗？")) { 
-        pushHistory(); tr.remove(); saveData(); 
-    }
-    else if (e.target.closest('.btn-up')) { 
-        let prev = tr.previousElementSibling; 
-        if (prev) { pushHistory(); tr.parentNode.insertBefore(tr, prev); document.querySelectorAll('#tBody tr').forEach(r => r.classList.remove('divider-top')); saveData(); } 
-    }
-    else if (e.target.closest('.btn-dn')) { 
-        let next = tr.nextElementSibling; 
-        if (next) { pushHistory(); tr.parentNode.insertBefore(next, tr); document.querySelectorAll('#tBody tr').forEach(r => r.classList.remove('divider-top')); saveData(); } 
-    }
-});
-
-let cellFocusValue = "";
-document.getElementById('tBody').addEventListener('focusin', function(e) {
-    if (e.target.tagName === 'INPUT') cellFocusValue = e.target.value;
-});
-document.getElementById('tBody').addEventListener('change', function(e) {
-    if (e.target.tagName === 'INPUT' && e.target.value !== cellFocusValue) { 
-        let newVal = e.target.value; e.target.value = cellFocusValue; pushHistory();
-        e.target.value = newVal; calc(e.target.closest('tr')); saveData(); 
-    }
-});
-
-document.getElementById('tBody').addEventListener('input', function(e) {
-    if (e.target.tagName === 'INPUT') { calc(e.target.closest('tr')); saveData(); }
-});
-
-document.getElementById('btnAddRow').addEventListener('click', function() {
-    pushHistory(); document.getElementById('tBody').appendChild(createRow()); saveData(); window.scrollTo(0, document.body.scrollHeight);
-});
-
-// ============================================
-// 修复点：移除了 '.in-rem'（终盘），保证未盘点的数据不被强行清零
-// ============================================
-document.getElementById('btnFill').addEventListener('click', function() {
-    pushHistory();
-    document.querySelectorAll('#tBody tr').forEach(tr => {
-        let name = tr.querySelector('.in-name').value.trim();
-        if (name !== "") {
-            ['.in-total', '.in-out', '.in-add-mid', '.in-add-post'].forEach(sel => {
-                let inp = tr.querySelector(sel);
-                if (inp && inp.offsetParent !== null && inp.value === "") inp.value = "0";
-            });
-            calc(tr);
-        }
-    });
-    saveData();
-});
-
-document.getElementById('btnForward').addEventListener('click', function() {
-    let roomName = document.querySelector('.tab-btn.active').innerText;
-    let typeName = currentType === 'drug' ? '药品' : '耗材';
-    
-    if(confirm(`⚠️ 正在结转【${roomName} - ${typeName}】\n\n确定要将现在的结余作为明天的起点吗？\n（点击确定后，当前所有流水记录将被清空，请确保账目已核对无误！）`)) {
-        pushHistory();
-        let isDSA6 = currentRoom === 6;
-        
-        document.querySelectorAll('#tBody tr').forEach(tr => {
-            let totalInput = tr.querySelector('.in-total');
-            let addMidInput = tr.querySelector('.in-add-mid');
-            let outInput = tr.querySelector('.in-out');
-            let remInput = tr.querySelector('.in-rem');
-            let addPostInput = tr.querySelector('.in-add-post');
-            
-            let name = tr.querySelector('.in-name').value.trim();
-            
-            if (name !== "" || totalInput.value !== "" || outInput.value !== "" || remInput.value !== "") {
-                let total = parseInt(totalInput.value) || 0;
-                let addMid = parseInt(addMidInput.value) || 0;
-                let preOut = parseInt(outInput.value) || 0;
-                let counted = parseInt(remInput.value) || 0;
-                let addPost = parseInt(addPostInput.value) || 0;
-                
-                let finalRem = 0;
-                if (remInput.value === "") {
-                    finalRem = isDSA6 ? (total - preOut + addPost) : (total + addMid - preOut);
-                } else {
-                    finalRem = isDSA6 ? (counted + addPost) : counted;
-                }
-                
-                if (finalRem > 0 || totalInput.value !== "") {
-                    totalInput.value = finalRem >= 0 ? finalRem : 0;
-                } else {
-                    totalInput.value = "";
-                }
-                
-                outInput.value = '';
-                remInput.value = '';
-                addMidInput.value = '';
-                addPostInput.value = '';
-                
-                tr.classList.remove('divider-top'); 
-                calc(tr);
-            }
-        });
-        saveData();
-        alert('✅ 结转成功！现在的【昨日余量】已是最新基准，可以交班了！');
-    }
-});
-
-document.getElementById('btnTop').addEventListener('click', function() {
-    pushHistory();
-    let tbody = document.getElementById('tBody');
-    let rows = Array.from(tbody.querySelectorAll('tr'));
-    
-    let group1 = []; 
-    let group2 = []; 
-    let group3 = []; 
-    let group4 = []; 
-    
-    rows.forEach(tr => {
-        tr.classList.remove('divider-top'); 
-        
-        let totalStr = tr.querySelector('.in-total').value;
-        let outStr = tr.querySelector('.in-out').value;
-        let remStr = tr.querySelector('.in-rem').value;
-        let addMidStr = tr.querySelector('.in-add-mid').value;
-        let addPostStr = tr.querySelector('.in-add-post').value;
-        
-        let total = parseInt(totalStr) || 0;
-        let outVal = parseInt(outStr) || 0;
-        let counted = parseInt(remStr) || 0;
-        let addPost = parseInt(addPostStr) || 0;
-        
-        let finalRem = (currentRoom === 6) ? (counted + addPost) : counted; 
-        
-        if ((totalStr === "" && outStr === "" && remStr === "" && addMidStr === "" && addPostStr === "") || 
-            (total === 0 && outVal === 0 && finalRem === 0)) {
-            group4.push(tr);
-        } else {
-            if (outVal > 0 || addMidStr !== "" || addPostStr !== "") {
-                if (finalRem > 0) group1.push(tr);
-                else group2.push(tr);
-            } else {
-                if (finalRem > 0 || total > 0) group3.push(tr);
-                else group4.push(tr); 
-            }
-        }
-    });
-    
-    group1.forEach(tr => tbody.appendChild(tr));
-    group2.forEach(tr => tbody.appendChild(tr));
-    group3.forEach(tr => tbody.appendChild(tr));
-    
-    if (group4.length > 0) {
-        group4[0].classList.add('divider-top');
-        group4.forEach(tr => tbody.appendChild(tr));
-    }
-    
-    saveData(); 
-});
-
-document.getElementById('btnClear').addEventListener('click', function() {
-    let roomName = document.querySelector('.tab-btn.active').innerText;
-    let typeName = currentType === 'drug' ? '药品' : '耗材';
-    if(confirm(`确定要清空 【${roomName} - ${typeName}】 的盘点数字吗？\n\n(仅清空当前页数字，排列顺序和名称保留)`)) {
-        pushHistory();
-        document.querySelectorAll('#tBody tr').forEach(tr => {
-            tr.querySelector('.in-total').value = ''; 
-            tr.querySelector('.in-out').value = '';
-            tr.querySelector('.in-rem').value = ''; 
-            tr.querySelector('.in-add-mid').value = ''; 
-            tr.querySelector('.in-add-post').value = ''; 
-            tr.classList.remove('divider-top'); calc(tr);
-        });
-        saveData();
-    }
-});
 
 window.onload = function() {
     let activeRoomBtn = document.querySelector(`.room-tabs .tab-btn:nth-child(${currentRoom})`);
@@ -516,13 +658,8 @@ window.onload = function() {
     document.querySelector(`.type-btn[data-type="${currentType}"]`).classList.add('active');
     if(currentType === 'drug') { body.classList.add('theme-drug'); thName.innerText = '药品名称'; } 
     else { body.classList.remove('theme-drug'); thName.innerText = '耗材名称'; }
-    applyRoomMode();
-    loadData();
+    applyRoomMode(); loadData();
 };
-
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(err => console.log('离线模式激活失败', err));
-}
 </script>
 </body>
 </html>
