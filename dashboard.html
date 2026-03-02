@@ -12,38 +12,150 @@
     --card: #ffffff;
     --border: #e0e0e0;
   }
-  body { font-family: -apple-system, sans-serif; margin: 0; padding: 8px; background: var(--bg); color: #333; padding-bottom: 50px;}
+  
+  body { 
+    font-family: -apple-system, sans-serif; 
+    margin: 0; 
+    padding: 8px; 
+    background: var(--bg); 
+    color: #333; 
+    padding-bottom: 50px;
+  }
   
   /* 顶部导航 */
-  .top-bar { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 10px 12px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); margin-bottom: 10px; }
-  .btn-back { background: #e8f0fe; color: var(--primary); border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 14px;}
-  .page-title { font-size: 16px; font-weight: bold; margin: 0; }
+  .top-bar { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    background: var(--card); 
+    padding: 10px 12px; 
+    border-radius: 8px; 
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05); 
+    margin-bottom: 10px; 
+  }
+  .btn-back { 
+    background: #e8f0fe; 
+    color: var(--primary); 
+    border: none; 
+    padding: 6px 12px; 
+    border-radius: 6px; 
+    font-weight: bold; 
+    cursor: pointer; 
+    text-decoration: none; 
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .page-title { 
+    font-size: 16px; 
+    font-weight: bold; 
+    margin: 0; 
+  }
 
   /* 核心控制台 */
-  .control-panel { background: var(--card); border-radius: 8px; padding: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); margin-bottom: 10px; display: flex; flex-direction: column; gap: 12px; }
+  .control-panel { 
+    background: var(--card); 
+    border-radius: 8px; 
+    padding: 12px; 
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05); 
+    margin-bottom: 10px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 12px; 
+  }
   
   /* 类型切换 */
   .type-tabs { display: flex; gap: 8px; }
-  .type-btn { flex: 1; padding: 8px 0; border: 1px solid var(--border); background: var(--card); border-radius: 6px; font-size: 14px; font-weight: bold; color: #555; cursor: pointer; transition: all 0.2s; }
+  .type-btn { 
+    flex: 1; 
+    padding: 8px 0; 
+    border: 1px solid var(--border); 
+    background: var(--card); 
+    border-radius: 6px; 
+    font-size: 14px; 
+    font-weight: bold; 
+    color: #555; 
+    cursor: pointer; 
+    transition: all 0.2s; 
+  }
   .type-btn[data-type="consumable"].active { background: #e8f0fe; color: var(--primary); border-color: var(--primary); }
   .type-btn[data-type="drug"].active { background: #e6f4ea; color: var(--drug); border-color: var(--drug); }
 
   /* 日期选择 */
-  .date-row { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: bold; }
-  .date-picker { flex: 1; border: 1px solid var(--border); border-radius: 4px; padding: 6px; color: #111; font-weight: bold; font-size: 14px; outline: none; background: #f8f9fa; }
+  .date-row { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    font-size: 14px; 
+    font-weight: bold; 
+  }
+  .date-picker { 
+    flex: 1; 
+    border: 1px solid var(--border); 
+    border-radius: 4px; 
+    padding: 6px; 
+    color: #111; 
+    font-weight: bold; 
+    font-size: 14px; 
+    outline: none; 
+    background: #f8f9fa; 
+  }
 
   /* 机房多选 */
   .room-row { display: flex; flex-wrap: wrap; gap: 6px; }
-  .room-label { display: flex; align-items: center; gap: 4px; background: #f1f3f5; padding: 6px 10px; border-radius: 20px; font-size: 13px; font-weight: bold; cursor: pointer; border: 1px solid transparent; transition: all 0.2s;}
-  .room-label:has(input:checked) { background: #e8f0fe; color: var(--primary); border-color: #b6d4fe; }
-  .room-label input { margin: 0; width: 14px; height: 14px; accent-color: var(--primary); cursor: pointer; }
+  .room-label { 
+    display: flex; 
+    align-items: center; 
+    gap: 4px; 
+    background: #f1f3f5; 
+    padding: 6px 10px; 
+    border-radius: 20px; 
+    font-size: 13px; 
+    font-weight: bold; 
+    cursor: pointer; 
+    border: 1px solid transparent; 
+    transition: all 0.2s;
+  }
+  .room-label.room-0-label { background: #ffebee; color: #c62828; }
+  .room-label.room-0-label:has(input:checked) { background: #c62828; color: #fff; border-color: #b71c1c; }
+  
+  .room-label:not(.room-0-label):has(input:checked) { background: #e8f0fe; color: var(--primary); border-color: #b6d4fe; }
+  .room-label input { margin: 0; width: 14px; height: 14px; cursor: pointer; }
 
   /* 数据表格 */
-  .table-wrapper { background: var(--card); border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); overflow: hidden; }
-  table { width: 100%; border-collapse: collapse; text-align: center; font-size: 13px; }
-  th { background: #343a40; color: white; padding: 10px 4px; font-weight: normal; font-size: 12px; position: sticky; top: 0; }
+  .table-wrapper { 
+    background: var(--card); 
+    border-radius: 8px; 
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05); 
+    overflow: hidden; 
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+  table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    text-align: center; 
+    font-size: 13px; 
+  }
+  th { 
+    background: #343a40; 
+    color: white; 
+    padding: 10px 4px; 
+    font-weight: normal; 
+    font-size: 12px; 
+    position: sticky; 
+    top: 0; 
+    z-index: 10;
+  }
   .theme-drug th { background: var(--drug); }
-  td { padding: 8px 4px; border-bottom: 1px solid #eee; vertical-align: middle; color: #111; font-weight: 500;}
+  td { 
+    padding: 8px 4px; 
+    border-bottom: 1px solid #eee; 
+    vertical-align: middle; 
+    color: #111; 
+    font-weight: 500;
+  }
   tbody tr:nth-child(even) { background-color: #f8fafd; }
   
   .col-name { text-align: left; padding-left: 8px; width: 28%; font-weight: bold; color: #000; }
@@ -56,7 +168,6 @@
 </style>
 </head>
 <body id="dashBody">
-
 <div class="top-bar">
   <h2 class="page-title">📊 综合统计看板</h2>
   <a href="index.html" class="btn-back">◀ 返回填报</a>
@@ -74,13 +185,14 @@
   </div>
 
   <div class="room-row">
-    <label class="room-label"><input type="checkbox" id="chkAll" checked onchange="toggleAllRooms()"> 全选</label>
+    <label class="room-label"><input type="checkbox" id="chkAll" checked onchange="toggleAllRooms()"> 全选 1~6</label>
     <label class="room-label"><input type="checkbox" class="chk-room" value="1" checked onchange="checkRooms()"> DSA 1</label>
     <label class="room-label"><input type="checkbox" class="chk-room" value="2" checked onchange="checkRooms()"> DSA 2</label>
     <label class="room-label"><input type="checkbox" class="chk-room" value="3" checked onchange="checkRooms()"> DSA 3</label>
     <label class="room-label"><input type="checkbox" class="chk-room" value="4" checked onchange="checkRooms()"> DSA 4</label>
     <label class="room-label"><input type="checkbox" class="chk-room" value="5" checked onchange="checkRooms()"> DSA 5</label>
     <label class="room-label"><input type="checkbox" class="chk-room" value="6" checked onchange="checkRooms()"> DSA 6</label>
+    <label class="room-label room-0-label"><input type="checkbox" id="chkRoom0" onchange="loadData()"> 🏥 查总库流水</label>
   </div>
 </div>
 
@@ -90,9 +202,9 @@
       <tr>
         <th class="col-name" id="thName">物资名称</th>
         <th>总前出</th>
-        <th>总补充<br><span style="font-size:9px">(中补+后补)</span></th>
+        <th>总补充</th>
         <th>净消耗</th>
-        <th>终盘余量<br><span style="font-size:9px">(所选期末)</span></th>
+        <th>期末余量<br><span style="font-size:9px">(所选期末日)</span></th>
       </tr>
     </thead>
     <tbody id="tBody">
@@ -102,13 +214,14 @@
 
 <script>
 /**
- * 初始化：智能上下文感知
+ * 1. 智能上下文感知
  * 从 LocalStorage 读取填报页传来的参数，做到无缝衔接
  */
 let currentType = localStorage.getItem('hospital_last_type') || 'drug';
 
 function getLocalTodayString() {
-    let d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    let d = new Date(); 
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
     return d.toISOString().split('T')[0];
 }
 
@@ -117,6 +230,7 @@ const dateStart = document.getElementById('dateStart');
 const dateEnd = document.getElementById('dateEnd');
 const chkAll = document.getElementById('chkAll');
 const chkRooms = document.querySelectorAll('.chk-room');
+const chkRoom0 = document.getElementById('chkRoom0');
 const tBody = document.getElementById('tBody');
 const dashBody = document.getElementById('dashBody');
 
@@ -124,28 +238,34 @@ const dashBody = document.getElementById('dashBody');
 dateStart.value = getLocalTodayString();
 dateEnd.value = getLocalTodayString();
 
-// 监听条件变化，触发重新计算
+// 监听条件变化，防呆拦截，并触发重新计算
 dateStart.addEventListener('change', autoCorrectDateAndLoad);
 dateEnd.addEventListener('change', autoCorrectDateAndLoad);
 
 function autoCorrectDateAndLoad() {
-    if (dateEnd.value < dateStart.value) dateEnd.value = dateStart.value; // 防呆设计
+    if (dateEnd.value < dateStart.value) dateEnd.value = dateStart.value; // 防呆设计：结束不能早于开始
     loadData();
 }
 
+// 类型切换逻辑与主题色适配
 function switchType(type) {
     currentType = type;
     document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelector(`.type-btn[data-type="${type}"]`).classList.add('active');
     
     // 切换主题色
-    if(type === 'drug') { dashBody.classList.add('theme-drug'); document.getElementById('thName').innerText = '药品名称'; } 
-    else { dashBody.classList.remove('theme-drug'); document.getElementById('thName').innerText = '耗材名称'; }
+    if(type === 'drug') { 
+        dashBody.classList.add('theme-drug'); 
+        document.getElementById('thName').innerText = '药品名称'; 
+    } else { 
+        dashBody.classList.remove('theme-drug'); 
+        document.getElementById('thName').innerText = '耗材名称'; 
+    }
     
     loadData();
 }
 
-// 机房多选逻辑
+// 机房多选联动逻辑 (仅联动 1~6，总库独立)
 function toggleAllRooms() {
     let isChecked = chkAll.checked;
     chkRooms.forEach(chk => chk.checked = isChecked);
@@ -158,11 +278,10 @@ function checkRooms() {
     loadData();
 }
 
-/**
- * 核心引擎：按日期段和机房切片聚合数据
- */
 function getSelectedRooms() {
-    return Array.from(chkRooms).filter(chk => chk.checked).map(chk => parseInt(chk.value));
+    let rooms = Array.from(chkRooms).filter(chk => chk.checked).map(chk => parseInt(chk.value));
+    if (chkRoom0.checked) rooms.push(0); // 如果勾选了总库，一并纳入统计引擎
+    return rooms;
 }
 
 function getDatesInRange(startStr, endStr) {
@@ -175,22 +294,24 @@ function getDatesInRange(startStr, endStr) {
     }
     return dates;
 }
-
+/**
+ * 核心引擎：按日期段和机房切片聚合数据
+ */
 function loadData() {
     let rooms = getSelectedRooms();
     let dates = getDatesInRange(dateStart.value, dateEnd.value);
     
     if (rooms.length === 0) {
-        tBody.innerHTML = '<tr><td colspan="5" class="empty-state">请至少选择一个手术间</td></tr>';
+        tBody.innerHTML = '<tr><td colspan="5" class="empty-state">请至少选择一个统计节点</td></tr>';
         return;
     }
 
     let itemMap = {}; // 结构: { "导管": { out: 0, add: 0, rem: 0 } }
     let hasData = false;
 
-    // 核心双重遍历
+    // 核心双重遍历：遍历日期 -> 遍历被选中的机房/总库
     dates.forEach(date => {
-        let isLastDay = (date === dateEnd.value); // 只有选中范围的最后一天，才计算终盘余量
+        let isLastDay = (date === dateEnd.value); // 只有选中范围的最后一天，才计算期末余量
         
         rooms.forEach(room => {
             let key = `hospital_v28_room_${room}_${currentType}_${date}`;
@@ -205,14 +326,14 @@ function loadData() {
                     if (!itemMap[name]) itemMap[name] = { out: 0, add: 0, rem: 0 };
                     
                     let outVal = parseInt(item.out) || 0;
-                    // 特殊机房计算契约：DSA6 算 addPost，其他算 addMid
+                    // 特殊机房计算契约：DSA6 算 addPost，其他(包括总库)算 addMid
                     let addVal = (room === 6) ? (parseInt(item.addPost) || 0) : (parseInt(item.addMid) || 0);
                     
                     itemMap[name].out += outVal;
                     itemMap[name].add += addVal;
                     hasData = true;
 
-                    // 【终盘余量参考】逻辑：仅累加最后一天各被选机房的实际清点数
+                    // 【期末余量】逻辑：仅累加最后一天各被选机房的实际清点数
                     if (isLastDay) {
                         let counted = parseInt(item.rem);
                         if (!isNaN(counted)) {
@@ -239,11 +360,10 @@ function renderTable(itemMap, hasData) {
     let sortedItems = Object.entries(itemMap).sort((a, b) => b[1].out - a[1].out);
 
     sortedItems.forEach(([name, data]) => {
-        // 如果该物资在这段时间内毫无动静，则不在报表中显示垃圾数据
+        // 过滤垃圾数据：如果该物资在这段时间内毫无动静，则不在报表中显示
         if(data.out === 0 && data.add === 0 && data.rem === 0) return; 
 
-        // 净消耗目前逻辑上等于总前出。
-        // 如果您的实际业务中，净消耗应该是 (前出 - 补充)，您可以将此处改为 `data.out - data.add`
+        // 净消耗目前逻辑上等于总前出
         let netConsumption = data.out; 
 
         let tr = document.createElement('tr');
@@ -257,10 +377,18 @@ function renderTable(itemMap, hasData) {
         tBody.appendChild(tr);
     });
 }
-
 // 页面加载完毕后立即执行初始化
 window.onload = function() {
-    switchType(currentType); // 触发UI变化和第一次数据拉取
+    // 权限收束：既然唯一入口在总库，护士长点进来最想看的默认肯定是【全科今日总消耗】
+    chkAll.checked = true;
+    chkRooms.forEach(chk => chk.checked = true);
+    
+    // 默认不勾选总库本身，确保护士长第一眼看到的是前线 1~6 的纯粹消耗量
+    // 如果她想对账总库自己的出入流转，手动点一下右上角的“🏥 查总库流水”即可
+    chkRoom0.checked = false;
+    
+    // 触发UI变化和第一次数据拉取（精准继承药品/耗材分类）
+    switchType(currentType); 
 };
 </script>
 </body>
