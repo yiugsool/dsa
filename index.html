@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>DSA清点台 V29.1 (完整未压缩版)</title>
+<title>DSA清点台 V29.2 (联网准备版)</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1a73e8">
 <link rel="apple-touch-icon" href="icon.png">
@@ -130,7 +130,7 @@
   </div>
 </div>
 
-<h3>🏥 DSA 双轨平账台 V29.1</h3>
+<h3>🏥 DSA 双轨平账台 V29.2</h3>
 
 <div class="nav-header">
   <div class="room-tabs" id="roomTabs">
@@ -155,7 +155,7 @@
         <th class="c-tot">昨日<br>余量</th>
         <th class="c-add c-dsa15-only" id="th-add">当日<br>补充</th>
         <th class="c-name" id="th-name">名称</th>
-        <th class="c-num" id="th-out">前出</th>
+        <th class="c-num" id="th-out">出库</th>
         <th class="c-num">终盘</th>
         <th class="c-add c-dsa6-only">后补</th>
         <th class="c-copy th-copy">出库</th>
@@ -175,8 +175,9 @@
   <button class="btn-action btn-unlock" id="btnUnlock">🔓解锁</button>
   <button class="btn-action btn-dash" onclick="location.href='dashboard.html'">📊 看板</button>
 </div>
+
 <script>
-// --- V29.1 身份认证 ---
+// --- V29.2 身份认证 (为后端Session做准备) ---
 let currentUser = localStorage.getItem('hospital_user');
 if (currentUser) {
     document.getElementById('loginOverlay').style.display = 'none';
@@ -185,6 +186,7 @@ if (currentUser) {
 function doLogin() {
     let name = document.getElementById('loginName').value.trim();
     if (!name) return alert('请输入姓名');
+    // TODO: 未来接入后端后，这里将调用 fetch API 验证账号密码并获取 Token
     localStorage.setItem('hospital_user', name);
     document.getElementById('displayUser').innerText = name;
     document.getElementById('loginOverlay').style.display = 'none';
@@ -227,7 +229,6 @@ dateInput.addEventListener('change', function() {
     loadData(); 
 });
 
-// 【核心Bug修复 1】：严格校验 currentRoom 缓存，防止 0 值被 || 1 强制变成 1
 let savedRoom = localStorage.getItem('hospital_last_room');
 let currentRoom = savedRoom !== null ? parseInt(savedRoom) : 1; 
 let currentType = localStorage.getItem('hospital_last_type') || 'drug'; 
@@ -329,7 +330,6 @@ function calc(tr) {
     setTimeout(() => { autoFitText(outLog); autoFitText(remLog); }, 10);
     refreshActionCol(tr); 
 }
-
 // --- 表格渲染与数据处理 ---
 function createRow() {
     let tr = document.createElement('tr');
@@ -383,7 +383,6 @@ function renderTableFromData(dataList) {
         let inName = tr.querySelector('.in-name');
         let inOut = tr.querySelector('.in-out');
         
-        // 【核心Bug修复 2】：防止 0 || '' 导致数字 0 变成空白隐身，严格判断 undefined
         inTotal.value = (item.total !== undefined && item.total !== '') ? item.total : '';
         inName.value = item.name || '';
         inOut.value = (item.out !== undefined && item.out !== '') ? item.out : ''; 
@@ -400,7 +399,7 @@ function renderTableFromData(dataList) {
             inTotal.classList.add('is-readonly');
         }
         
-        // V29.0 总库引擎：科室总库强制锁定“前出”并设为只读
+        // V29.0 总库引擎：科室总库强制锁定“出库”并设为只读
         if(currentRoom === 0) {
             inOut.readOnly = true;
             inOut.classList.add('is-readonly');
@@ -410,7 +409,7 @@ function renderTableFromData(dataList) {
     });
 }
 
-// V29.0 核心引擎：动态获取1~6手术间的真实入库量，倒逼总库出库
+// 动态获取1~6手术间的真实入库量，倒逼总库出库
 function syncStoreroomOut(dataList) {
     if(currentRoom !== 0) return dataList;
     let targetDate = dateInput.value; 
@@ -439,25 +438,29 @@ function loadData() {
     let saved = localStorage.getItem(getStorageKey());
     if (saved && saved !== '[]') {
         let parsed = JSON.parse(saved);
-        parsed = syncStoreroomOut(parsed); // 每次加载总库，强行同步发单数
+        parsed = syncStoreroomOut(parsed); 
         renderTableFromData(parsed);
         baseSnapshot = JSON.stringify(parsed);
     } else {
-        let prefix = `hospital_v28_room_${currentRoom}_${currentType}_`;
-        let pastDates = [];
-        for(let i=0; i<localStorage.length; i++) {
-            let key = localStorage.key(i);
-            if(key.startsWith(prefix) && !key.includes('locked')) {
-                let d = key.replace(prefix, '');
-                if(d < dateInput.value) pastDates.push(d);
+        // 【升级 3：时光机自动追账 (向前最多推演 45 天)】
+        let lastData = null;
+        let checkDate = new Date(dateInput.value);
+        
+        for (let i = 1; i <= 45; i++) {
+            checkDate.setDate(checkDate.getDate() - 1);
+            let tzOffset = checkDate.getTimezoneOffset() * 60000;
+            let localISOTime = (new Date(checkDate - tzOffset)).toISOString().split('T')[0];
+            
+            let checkKey = `hospital_v28_room_${currentRoom}_${currentType}_${localISOTime}`;
+            let pastRaw = localStorage.getItem(checkKey);
+            if (pastRaw && pastRaw !== '[]' && !checkKey.includes('locked')) {
+                lastData = JSON.parse(pastRaw);
+                console.log(`[时光机] 成功追溯到最近的账单日期：${localISOTime}`);
+                break;
             }
         }
         
-        if (pastDates.length > 0) {
-            pastDates.sort();
-            let lastDate = pastDates[pastDates.length - 1];
-            let lastData = JSON.parse(localStorage.getItem(prefix + lastDate) || '[]');
-            
+        if (lastData) {
             let isDSA6 = (currentRoom === 6);
             let newData = [];
             lastData.forEach(item => {
@@ -467,6 +470,7 @@ function loadData() {
                 let counted = parseInt(item.rem);
                 let addPost = parseInt(item.addPost) || 0;
 
+                // 精准推算历史期末结余，无缝衔接至今日“昨日余量”
                 let finalRem = isNaN(counted) ? (isDSA6 ? (total - preOut + addPost) : (total + addMid - preOut)) : (isDSA6 ? (counted + addPost) : counted);
                 
                 if(item.name && item.name.trim() !== "") {
@@ -481,7 +485,8 @@ function loadData() {
             renderTableFromData(newData);
             baseSnapshot = "[]"; 
         } else {
-             let defaultLists = {
+            // 【升级 2：更新默认物资字典】
+            let defaultLists = {
                 'consumable': ['留置针', '三通', '附件', '导尿包', '输液延长管', '3M贴膜', '小药杯', '美皮康15×20'],
                 'drug': ['法舒地尔', '威视派克', '碘克沙醇', '利多卡因', '肝素钠', '500NS', '平衡液', '250GS', '100NS', '10糖', '250GNS', '硝酸甘油', '替罗非班', '碘化油', '头孢呋辛钠']
             };
@@ -615,16 +620,17 @@ function runCascadeForward(room, type, startDateStr) {
     return true;
 }
 
-// --- 按键监听与后台审计日志 (完美恢复) ---
+// --- 按键监听与后台审计日志 (已植入后端预留接口) ---
 document.getElementById('btnUpload').addEventListener('click', function() {
     let currentDataStr = JSON.stringify(getTableDataAsJson());
     if(dateInput.value !== getLocalTodayString()) {
         if(!runCascadeForward(currentRoom, currentType, dateInput.value)) return; 
     }
     
-    // 【完美恢复的暗线审计日志】
+    // 【架构升级预留：上帝视角 Diff 审计日志】
     if(baseSnapshot !== currentDataStr) {
         let roomName = currentRoom === 0 ? '🏥 科室总库' : `DSA ${currentRoom}`;
+        // 未来在这里我们将会把 diff 结果通过 fetch 发送到路由器的 PHP 后端
         console.log(`[审计日志] 🔒 ${currentUser || '未登录用户'} 在【${dateInput.value}】对 [${roomName}] 进行了数据定稿。`);
         baseSnapshot = currentDataStr; 
     }
@@ -645,6 +651,7 @@ document.getElementById('btnUnlock').addEventListener('click', function() {
             totalInput.readOnly = false;
             totalInput.classList.remove('is-readonly');
         });
+        // 未来：解锁行为也会记入审计日志
     } else if(reason !== null) alert("❌ 解锁失败：必须填写原因。");
 });
 
@@ -709,7 +716,7 @@ function applyRoomMode() {
     } else { 
         body.classList.add('mode-dsa15'); 
         thAdd.innerHTML = '当日<br>补充'; 
-        thOut.innerHTML = '前出'; 
+        thOut.innerHTML = '出库'; // 【升级 1：彻底统一术语，UI展示替换】
     }
 }
 
@@ -750,14 +757,12 @@ function switchType(type) {
 }
 
 window.onload = function() {
-    // 选中初始化房间
     let activeRoomBtn = document.querySelector(currentRoom === 0 ? `.room-tabs .tab-btn.room-0` : `.room-tabs .tab-btn:nth-child(${currentRoom + 1})`);
     if(activeRoomBtn) { 
         activeRoomBtn.classList.add('active'); 
         setTimeout(() => activeRoomBtn.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' }), 50); 
     }
     
-    // 选中初始化类型
     document.querySelector(`.type-btn[data-type="${currentType}"]`).classList.add('active');
     let body = document.getElementById('appBody'); 
     let thName = document.getElementById('th-name');
