@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>DSA清点台 V28.1 (完美修复版)</title>
+<title>DSA清点台 V29.1 (完整未压缩版)</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1a73e8">
 <link rel="apple-touch-icon" href="icon.png">
@@ -33,6 +33,11 @@
   .room-tabs::-webkit-scrollbar { display: none; }
   .tab-btn { flex: 0 0 auto; padding: 8px 16px; background: #f1f3f5; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; color: #666; cursor: pointer; transition: all 0.2s; }
   .tab-btn.active { background: #343a40; color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transform: scale(1.02); }
+  
+  /* 科室总库专属样式 */
+  .tab-btn.room-0 { color: #d32f2f; background: #ffebee; }
+  .tab-btn.room-0.active { background: #c62828; color: #fff; }
+
   .type-tabs { display: flex; gap: 8px; }
   .type-btn { flex: 1; padding: 8px 0; border: 1px solid #ddd; background: #fff; border-radius: 20px; font-size: 14px; font-weight: bold; color: #555; cursor: pointer; transition: all 0.2s; }
   .type-btn[data-type="consumable"].active { background: #e8f0fe; color: #1a73e8; border-color: #1a73e8; }
@@ -45,7 +50,7 @@
   td { padding: 4px 1px; border-bottom: 1px solid #eee; vertical-align: middle; height: 46px; } 
   tbody tr:nth-child(even) { background-color: #f8fafd; }
   
-  body.mode-dsa15 .c-dsa6-only { display: none; }
+  body.mode-dsa15 .c-dsa6-only, body.mode-dsa0 .c-dsa6-only { display: none; }
   body.mode-dsa6 .c-dsa15-only { display: none; }
 
   .c-tot { width: 11%; } .c-add { width: 10%; } .c-name { width: 18%; } .c-num { width: 10%; } 
@@ -87,8 +92,11 @@
   .btn-undo { background: #e0f7fa; color: #006064; border: 1px solid #b2ebf2; }
   .btn-upload { background: #fff3cd; color: #f57f17; border: 1px solid #ffe082; }
   .btn-unlock { background: #ffebee; color: #d32f2f; border: 1px solid #ffcdd2; display: none; }
-  .btn-summary { background: #e8eaf6; color: #3f51b5; border: 1px solid #c5cae9; } 
   
+  /* 看板按钮初始隐藏，仅在总库模式下显示 */
+  .btn-dash { background: #e8eaf6; color: #3f51b5; border: 1px solid #c5cae9; display: none; } 
+  body.mode-dsa0 .btn-dash { display: block; }
+
   body.is-locked .btn-upload { display: none; }
   body.is-locked .btn-unlock { display: block; }
 
@@ -122,10 +130,11 @@
   </div>
 </div>
 
-<h3>🏥 DSA 双轨平账台 V28.1</h3>
+<h3>🏥 DSA 双轨平账台 V29.1</h3>
 
 <div class="nav-header">
   <div class="room-tabs" id="roomTabs">
+    <button class="tab-btn room-0" onclick="switchRoom(0, this)">🏥 科室总库</button>
     <button class="tab-btn" onclick="switchRoom(1, this)">DSA 1</button>
     <button class="tab-btn" onclick="switchRoom(2, this)">DSA 2</button>
     <button class="tab-btn" onclick="switchRoom(3, this)">DSA 3</button>
@@ -144,9 +153,9 @@
     <thead>
       <tr>
         <th class="c-tot">昨日<br>余量</th>
-        <th class="c-add c-dsa15-only">当日<br>补充</th>
+        <th class="c-add c-dsa15-only" id="th-add">当日<br>补充</th>
         <th class="c-name" id="th-name">名称</th>
-        <th class="c-num">前出</th>
+        <th class="c-num" id="th-out">前出</th>
         <th class="c-num">终盘</th>
         <th class="c-add c-dsa6-only">后补</th>
         <th class="c-copy th-copy">出库</th>
@@ -162,13 +171,12 @@
   <button class="btn-action btn-add" id="btnAddRow">➕新增</button>
   <button class="btn-action btn-top" id="btnTop">⬆️排序</button>
   <button class="btn-action btn-undo" id="btnUndo">↩️撤销</button>
-  <button class="btn-action btn-upload" id="btnUpload">☁️上传定稿</button>
-  <button class="btn-action btn-unlock" id="btnUnlock">🔓解锁修改</button>
-  <button class="btn-action btn-summary" onclick="window.location.href='dashboard.html'">📊总结</button>
+  <button class="btn-action btn-upload" id="btnUpload">☁️定稿</button>
+  <button class="btn-action btn-unlock" id="btnUnlock">🔓解锁</button>
+  <button class="btn-action btn-dash" onclick="location.href='dashboard.html'">📊 看板</button>
 </div>
-
 <script>
-// --- V28.1 身份认证 ---
+// --- V29.1 身份认证 ---
 let currentUser = localStorage.getItem('hospital_user');
 if (currentUser) {
     document.getElementById('loginOverlay').style.display = 'none';
@@ -191,7 +199,8 @@ function doLogout() {
 let dateInput = document.getElementById('sysDate');
 
 function getLocalTodayString() {
-    let d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    let d = new Date(); 
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
     return d.toISOString().split('T')[0];
 }
 
@@ -206,6 +215,7 @@ function changeDateBy(days) {
     dateInput.value = d.toISOString().split('T')[0];
     dateInput.dispatchEvent(new Event('change'));
 }
+
 function goToToday() {
     dateInput.value = getLocalTodayString();
     dateInput.dispatchEvent(new Event('change'));
@@ -217,7 +227,9 @@ dateInput.addEventListener('change', function() {
     loadData(); 
 });
 
-let currentRoom = parseInt(localStorage.getItem('hospital_last_room')) || 1; 
+// 【核心Bug修复 1】：严格校验 currentRoom 缓存，防止 0 值被 || 1 强制变成 1
+let savedRoom = localStorage.getItem('hospital_last_room');
+let currentRoom = savedRoom !== null ? parseInt(savedRoom) : 1; 
 let currentType = localStorage.getItem('hospital_last_type') || 'drug'; 
 let historyStack = [];
 
@@ -237,9 +249,8 @@ function checkLockState() {
 
 let baseSnapshot = "[]"; 
 
-// --- 动态操作列刷新逻辑 (Bug已修复：只校验数字框，排除了名称框) ---
+// --- 动态操作列刷新逻辑 ---
 function refreshActionCol(tr) {
-    // 专门筛选出代表资产数据的数字框
     let numInputs = tr.querySelectorAll('.in-total, .in-add-mid, .in-out, .in-rem, .in-add-post');
     let hasData = Array.from(numInputs).some(inp => inp.value !== "" && inp.value !== "0");
     
@@ -247,10 +258,10 @@ function refreshActionCol(tr) {
     let delBtn = tr.querySelector('.btn-del');
     
     if (hasData) {
-        moveCol.style.display = 'flex'; // 有数字，只能上下移
+        moveCol.style.display = 'flex'; 
         delBtn.style.display = 'none';
     } else {
-        moveCol.style.display = 'none'; // 全空，变为垃圾桶
+        moveCol.style.display = 'none'; 
         delBtn.style.display = 'flex';
     }
 }
@@ -262,7 +273,7 @@ function autoFitText(element) {
     else { element.style.fontSize = '16px'; element.style.letterSpacing = 'normal'; }
 }
 
-// 恢复 V27 极其稳定的结算逻辑
+// --- 日志推演与运算引擎 ---
 function calc(tr) {
     let isDSA6 = currentRoom === 6;
     let totalInput = tr.querySelector('.in-total');
@@ -286,7 +297,7 @@ function calc(tr) {
 
     if (totalStr === "" && outStr === "" && remStr === "" && addMidInput.value === "" && addPostInput.value === "") { 
         outLog.innerHTML = '-'; remLog.innerHTML = '-'; 
-        refreshActionCol(tr); // 触发动态按钮刷新
+        refreshActionCol(tr); 
         return; 
     }
 
@@ -316,7 +327,7 @@ function calc(tr) {
     remLog.innerHTML = rHtml;
 
     setTimeout(() => { autoFitText(outLog); autoFitText(remLog); }, 10);
-    refreshActionCol(tr); // 计算完毕后触发动态按钮刷新
+    refreshActionCol(tr); 
 }
 
 // --- 表格渲染与数据处理 ---
@@ -370,30 +381,65 @@ function renderTableFromData(dataList) {
         let tr = createRow(); tbody.appendChild(tr);
         let inTotal = tr.querySelector('.in-total');
         let inName = tr.querySelector('.in-name');
+        let inOut = tr.querySelector('.in-out');
         
-        inTotal.value = item.total || ''; 
+        // 【核心Bug修复 2】：防止 0 || '' 导致数字 0 变成空白隐身，严格判断 undefined
+        inTotal.value = (item.total !== undefined && item.total !== '') ? item.total : '';
         inName.value = item.name || '';
-        tr.querySelector('.in-out').value = item.out || ''; 
-        tr.querySelector('.in-rem').value = item.rem || '';
-        tr.querySelector('.in-add-mid').value = item.addMid || ''; 
-        tr.querySelector('.in-add-post').value = item.addPost || ''; 
+        inOut.value = (item.out !== undefined && item.out !== '') ? item.out : ''; 
+        tr.querySelector('.in-rem').value = (item.rem !== undefined && item.rem !== '') ? item.rem : '';
+        tr.querySelector('.in-add-mid').value = (item.addMid !== undefined && item.addMid !== '') ? item.addMid : ''; 
+        tr.querySelector('.in-add-post').value = (item.addPost !== undefined && item.addPost !== '') ? item.addPost : ''; 
         
         if(item.name && item.name.trim() !== "") {
             inName.readOnly = true; 
             inName.classList.add('is-readonly');
         }
-        if(item.total !== "" && item.total !== undefined) {
+        if(inTotal.value !== "") {
             inTotal.readOnly = true;
             inTotal.classList.add('is-readonly');
         }
+        
+        // V29.0 总库引擎：科室总库强制锁定“前出”并设为只读
+        if(currentRoom === 0) {
+            inOut.readOnly = true;
+            inOut.classList.add('is-readonly');
+        }
+        
         calc(tr);
     });
+}
+
+// V29.0 核心引擎：动态获取1~6手术间的真实入库量，倒逼总库出库
+function syncStoreroomOut(dataList) {
+    if(currentRoom !== 0) return dataList;
+    let targetDate = dateInput.value; 
+    let aggOut = {};
+    
+    for(let r=1; r<=6; r++) {
+        let raw = localStorage.getItem(`hospital_v28_room_${r}_${currentType}_${targetDate}`);
+        if(raw && raw !== '[]') {
+            JSON.parse(raw).forEach(i => {
+                let n = (i.name || "").trim(); 
+                if(!n) return;
+                let addAmt = (r===6) ? (parseInt(i.addPost)||0) : (parseInt(i.addMid)||0);
+                if(addAmt > 0) aggOut[n] = (aggOut[n] || 0) + addAmt;
+            });
+        }
+    }
+    
+    dataList.forEach(i => { 
+        let n = (i.name || "").trim(); 
+        if(n) i.out = aggOut[n] !== undefined ? aggOut[n] : ''; 
+    });
+    return dataList;
 }
 
 function loadData() {
     let saved = localStorage.getItem(getStorageKey());
     if (saved && saved !== '[]') {
         let parsed = JSON.parse(saved);
+        parsed = syncStoreroomOut(parsed); // 每次加载总库，强行同步发单数
         renderTableFromData(parsed);
         baseSnapshot = JSON.stringify(parsed);
     } else {
@@ -431,28 +477,30 @@ function loadData() {
                      });
                 }
             });
+            newData = syncStoreroomOut(newData);
             renderTableFromData(newData);
             baseSnapshot = "[]"; 
         } else {
-            let defaultLists = {
-                'consumable': ['造影导管','指引导管','导丝','动脉鞘','球囊扩张导管','冠脉支架'],
-                'drug': ['肝素钠','利多卡因','造影剂','生理盐水','硝酸甘油','去甲肾上腺素']
+             let defaultLists = {
+                'consumable': ['留置针', '三通', '附件', '导尿包', '输液延长管', '3M贴膜', '小药杯', '美皮康15×20'],
+                'drug': ['法舒地尔', '威视派克', '碘克沙醇', '利多卡因', '肝素钠', '500NS', '平衡液', '250GS', '100NS', '10糖', '250GNS', '硝酸甘油', '替罗非班', '碘化油', '头孢呋辛钠']
             };
-            renderTableFromData(defaultLists[currentType].map(name => ({name: name})));
+            let newData = defaultLists[currentType].map(name => ({name: name}));
+            newData = syncStoreroomOut(newData);
+            renderTableFromData(newData);
             baseSnapshot = "[]";
         }
     }
     checkLockState(); 
 }
 
-// --- 双轨排序引擎 (Bug已修复) ---
+// --- 双轨排序引擎 ---
 document.getElementById('btnTop').addEventListener('click', function() {
     if (document.body.classList.contains('is-locked')) return;
     pushHistory();
     let tbody = document.getElementById('tBody');
     let rows = Array.from(tbody.querySelectorAll('tr'));
     
-    // 检查某行是否全是废料（只检测数字输入框）
     const isZeroRow = (tr) => {
         let numInputs = tr.querySelectorAll('.in-total, .in-add-mid, .in-out, .in-rem, .in-add-post');
         return !Array.from(numInputs).some(i => i.value !== "" && i.value !== "0");
@@ -461,7 +509,6 @@ document.getElementById('btnTop').addEventListener('click', function() {
     rows.forEach(tr => tr.classList.remove('divider-top'));
     
     if (currentType === 'consumable') {
-        // 耗材：四级提纯
         let group1 = [], group2 = [], group3 = [], group4 = []; 
         rows.forEach(tr => {
             let total = parseInt(tr.querySelector('.in-total').value) || 0;
@@ -487,7 +534,6 @@ document.getElementById('btnTop').addEventListener('click', function() {
         rows = [...group1, ...group2, ...group3, ...group4];
         if (group4.length > 0) group4[0].classList.add('divider-top');
     } else {
-        // 药品：两级过滤，保留原序
         let active = [], inactive = [];
         rows.forEach(tr => {
             if (isZeroRow(tr)) inactive.push(tr);
@@ -569,16 +615,20 @@ function runCascadeForward(room, type, startDateStr) {
     return true;
 }
 
-// --- 按键监听 ---
+// --- 按键监听与后台审计日志 (完美恢复) ---
 document.getElementById('btnUpload').addEventListener('click', function() {
     let currentDataStr = JSON.stringify(getTableDataAsJson());
     if(dateInput.value !== getLocalTodayString()) {
         if(!runCascadeForward(currentRoom, currentType, dateInput.value)) return; 
     }
+    
+    // 【完美恢复的暗线审计日志】
     if(baseSnapshot !== currentDataStr) {
-        console.log(`[审计日志] 🔒 ${currentUser} 在【${dateInput.value}】对 [DSA ${currentRoom}] 进行了数据定稿。`);
+        let roomName = currentRoom === 0 ? '🏥 科室总库' : `DSA ${currentRoom}`;
+        console.log(`[审计日志] 🔒 ${currentUser || '未登录用户'} 在【${dateInput.value}】对 [${roomName}] 进行了数据定稿。`);
         baseSnapshot = currentDataStr; 
     }
+    
     document.body.classList.add('is-locked');
     localStorage.setItem(getLockKey(), 'true');
     saveData(); 
@@ -606,19 +656,25 @@ document.getElementById('btnUndo').addEventListener('click', function() {
 });
 
 document.getElementById('btnAddRow').addEventListener('click', function() {
-    pushHistory(); document.getElementById('tBody').appendChild(createRow()); 
-    saveData(); window.scrollTo(0, document.body.scrollHeight);
+    pushHistory(); 
+    document.getElementById('tBody').appendChild(createRow()); 
+    saveData(); 
+    window.scrollTo(0, document.body.scrollHeight);
 });
 
 let cellFocusValue = "";
-document.getElementById('tBody').addEventListener('focusin', function(e) { if (e.target.tagName === 'INPUT') cellFocusValue = e.target.value; });
+document.getElementById('tBody').addEventListener('focusin', function(e) { 
+    if (e.target.tagName === 'INPUT') cellFocusValue = e.target.value; 
+});
 document.getElementById('tBody').addEventListener('change', function(e) {
     if (e.target.tagName === 'INPUT' && e.target.value !== cellFocusValue) { 
         let newVal = e.target.value; e.target.value = cellFocusValue; pushHistory();
         e.target.value = newVal; calc(e.target.closest('tr')); saveData(); 
     }
 });
-document.getElementById('tBody').addEventListener('input', function(e) { if (e.target.tagName === 'INPUT') { calc(e.target.closest('tr')); saveData(); } });
+document.getElementById('tBody').addEventListener('input', function(e) { 
+    if (e.target.tagName === 'INPUT') { calc(e.target.closest('tr')); saveData(); } 
+});
 
 document.getElementById('tBody').addEventListener('click', function(e) {
     if (document.body.classList.contains('is-locked')) return;
@@ -626,39 +682,95 @@ document.getElementById('tBody').addEventListener('click', function(e) {
     if (e.target.closest('.btn-del')) { 
         if(confirm("⚠️ 确认删除空条目吗？\n（今日及未来生效，历史保存）")) { pushHistory(); tr.remove(); saveData(); }
     }
-    else if (e.target.closest('.btn-up')) { let prev = tr.previousElementSibling; if (prev) { pushHistory(); tr.parentNode.insertBefore(tr, prev); saveData(); } }
-    else if (e.target.closest('.btn-dn')) { let next = tr.nextElementSibling; if (next) { pushHistory(); tr.parentNode.insertBefore(next, tr); saveData(); } }
+    else if (e.target.closest('.btn-up')) { 
+        let prev = tr.previousElementSibling; 
+        if (prev) { pushHistory(); tr.parentNode.insertBefore(tr, prev); saveData(); } 
+    }
+    else if (e.target.closest('.btn-dn')) { 
+        let next = tr.nextElementSibling; 
+        if (next) { pushHistory(); tr.parentNode.insertBefore(next, tr); saveData(); } 
+    }
 });
 
+// --- UI 房间模式适配 ---
 function applyRoomMode() {
     let body = document.getElementById('appBody');
-    if (currentRoom === 6) { body.classList.remove('mode-dsa15'); body.classList.add('mode-dsa6'); } 
-    else { body.classList.remove('mode-dsa6'); body.classList.add('mode-dsa15'); }
+    let thAdd = document.getElementById('th-add');
+    let thOut = document.getElementById('th-out');
+    
+    body.classList.remove('mode-dsa15', 'mode-dsa6', 'mode-dsa0');
+    
+    if (currentRoom === 6) { 
+        body.classList.add('mode-dsa6'); 
+    } else if (currentRoom === 0) { 
+        body.classList.add('mode-dsa0'); 
+        thAdd.innerHTML = '医院<br>入库'; 
+        thOut.innerHTML = '发给<br>各室'; 
+    } else { 
+        body.classList.add('mode-dsa15'); 
+        thAdd.innerHTML = '当日<br>补充'; 
+        thOut.innerHTML = '前出'; 
+    }
 }
+
 function switchRoom(roomNum, btnElement) {
-    saveData(); currentRoom = roomNum; localStorage.setItem('hospital_last_room', currentRoom); 
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active')); btnElement.classList.add('active');
+    saveData(); 
+    currentRoom = roomNum; 
+    localStorage.setItem('hospital_last_room', currentRoom); 
+    
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active')); 
+    btnElement.classList.add('active');
     btnElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); 
-    historyStack = []; applyRoomMode(); loadData(); 
+    
+    historyStack = []; 
+    applyRoomMode(); 
+    loadData(); 
 }
+
 function switchType(type) {
-    saveData(); currentType = type; localStorage.setItem('hospital_last_type', currentType); 
+    saveData(); 
+    currentType = type; 
+    localStorage.setItem('hospital_last_type', currentType); 
+    
     document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelector(`.type-btn[data-type="${type}"]`).classList.add('active');
-    let body = document.getElementById('appBody'); let thName = document.getElementById('th-name');
-    if(type === 'drug') { body.classList.add('theme-drug'); thName.innerText = '药品名称'; } 
-    else { body.classList.remove('theme-drug'); thName.innerText = '耗材名称'; }
-    historyStack = []; loadData(); 
+    
+    let body = document.getElementById('appBody'); 
+    let thName = document.getElementById('th-name');
+    if(type === 'drug') { 
+        body.classList.add('theme-drug'); 
+        thName.innerText = '药品名称'; 
+    } else { 
+        body.classList.remove('theme-drug'); 
+        thName.innerText = '耗材名称'; 
+    }
+    
+    historyStack = []; 
+    loadData(); 
 }
 
 window.onload = function() {
-    let activeRoomBtn = document.querySelector(`.room-tabs .tab-btn:nth-child(${currentRoom})`);
-    if(activeRoomBtn) { activeRoomBtn.classList.add('active'); setTimeout(() => activeRoomBtn.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' }), 50); }
-    let body = document.getElementById('appBody'); let thName = document.getElementById('th-name');
+    // 选中初始化房间
+    let activeRoomBtn = document.querySelector(currentRoom === 0 ? `.room-tabs .tab-btn.room-0` : `.room-tabs .tab-btn:nth-child(${currentRoom + 1})`);
+    if(activeRoomBtn) { 
+        activeRoomBtn.classList.add('active'); 
+        setTimeout(() => activeRoomBtn.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' }), 50); 
+    }
+    
+    // 选中初始化类型
     document.querySelector(`.type-btn[data-type="${currentType}"]`).classList.add('active');
-    if(currentType === 'drug') { body.classList.add('theme-drug'); thName.innerText = '药品名称'; } 
-    else { body.classList.remove('theme-drug'); thName.innerText = '耗材名称'; }
-    applyRoomMode(); loadData();
+    let body = document.getElementById('appBody'); 
+    let thName = document.getElementById('th-name');
+    if(currentType === 'drug') { 
+        body.classList.add('theme-drug'); 
+        thName.innerText = '药品名称'; 
+    } else { 
+        body.classList.remove('theme-drug'); 
+        thName.innerText = '耗材名称'; 
+    }
+    
+    applyRoomMode(); 
+    loadData();
 };
 </script>
 </body>
